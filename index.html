@@ -1,0 +1,3243 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NASA APOD Space Gallery</title>
+  <!-- Importing gorgeous Google Fonts for an celestial, professional typography style -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* ==========================================
+         CRAFTED THEME & CSS CUSTOM PROPERTIES
+         ========================================== */
+    :root {
+      /* Default Bento Cosmic Dark Theme (High contrast, safe midnight blue tones) */
+      --bg-primary: #020617;
+      --bg-secondary: #0b1329;
+      --bg-card: rgba(15, 23, 42, 0.65);
+      --bg-glass-hover: rgba(30, 41, 59, 0.75);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-color: #3b82f6;
+      /* Modern royal blue */
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --heart-color: #ef4444;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --border-focus: rgba(59, 130, 246, 0.5);
+      --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+      --glow-transition: shadow 0.3s ease, border-color 0.3s ease;
+      --speed-normal: 0.3s;
+    }
+
+    [data-theme="light"] {
+      /* Elegant Eclipse Light Theme (Cool grey and slate tones) */
+      --bg-primary: #f1f5f9;
+      --bg-secondary: #e2e8f0;
+      --bg-card: rgba(255, 255, 255, 0.85);
+      --bg-glass-hover: rgba(255, 255, 255, 0.95);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --accent-color: #1d4ed8;
+      --accent-glow: rgba(29, 78, 216, 0.15);
+      --heart-color: #dc2626;
+      --border-color: rgba(15, 23, 42, 0.08);
+      --border-focus: rgba(29, 78, 216, 0.4);
+      --card-shadow: 0 10px 30px -15px rgba(15, 23, 42, 0.1);
+    }
+
+    /* RESET & BASE STYLES */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding-bottom: 5rem;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background-color var(--speed-normal) ease, color var(--speed-normal) ease;
+    }
+
+    /* ==========================================
+         STARFIELD BACKGROUND ANIMATION (CANVAS BASED)
+         ========================================== */
+    .starfield-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: -10;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    #celestialCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      transition: opacity 0.5s ease;
+    }
+
+    body[data-theme="light"] #celestialCanvas {
+      opacity: 0.85;
+      /* Subtly reduce opacity in light mode for extreme neatness */
+    }
+
+    /* ==========================================
+         TYPOGRAPHY & ACCENTS
+         ========================================== */
+    h1,
+    h2,
+    h3,
+    .heading-display {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .mono-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    /* Glow effect to capture a nebular star feel */
+    .text-glow {
+      text-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    /* ==========================================
+         LAYOUT CONTAINER
+         ========================================== */
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .app-container {
+        padding: 1rem 1rem;
+      }
+    }
+
+    /* ==========================================
+         HEADER COMPONENT
+         ========================================== */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+    }
+
+    .logo-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-title {
+      font-size: 2.25rem;
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-color) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .logo-subtitle {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent-color);
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+
+    /* Dynamic Network Telemetry Badge styling */
+    .telemetry-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-color);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      align-self: center;
+    }
+
+    .telemetry-badge.sync .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: #10b981;
+      /* Emerald green for live */
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: telemetry-pulse-green 2s infinite;
+    }
+
+    .telemetry-badge.sync {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.25);
+    }
+
+    .telemetry-badge.offline {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #f59e0b;
+    }
+
+    .telemetry-badge.offline .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: #f59e0b;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      animation: telemetry-pulse-yellow 2s infinite;
+    }
+
+    @keyframes telemetry-pulse-green {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
+    @keyframes telemetry-pulse-yellow {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    /* BUTTONS & COMPONENT ACTIONS */
+    .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.6rem 1.2rem;
+      border-radius: 9999px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      min-height: 44px;
+      /* Touch target minimum */
+    }
+
+    .btn:hover {
+      background: var(--bg-glass-hover);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 15px var(--accent-glow);
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-icon-only {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .icon-svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      flex-shrink: 0;
+      pointer-events: none !important;
+    }
+
+    /* ==========================================
+         INTERACTIVE SPACE TOOLS PANEL
+         ========================================== */
+    .space-tools {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.5rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--card-shadow);
+    }
+
+    .tool-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .tool-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    /* Date Picker styling override */
+    input[type="date"] {
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 0.5rem 0.8rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+      min-height: 40px;
+    }
+
+    body[data-theme="light"] input[type="date"] {
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    input[type="date"]:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    /* ==========================================
+         HERO SECTION: TODAY'S APOD
+         ========================================== */
+    .hero-section {
+      margin-bottom: 4rem;
+    }
+
+    .section-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent-color);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .hero-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--card-shadow);
+      transition: var(--glow-transition);
+    }
+
+    @media (max-width: 1024px) {
+      .hero-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .hero-media-container {
+      position: relative;
+      width: 100%;
+      min-height: 380px;
+      background: #000;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    @media (max-width: 640px) {
+      .hero-media-container {
+        min-height: 250px;
+      }
+    }
+
+    .hero-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+
+    .hero-media-container:hover .hero-img {
+      transform: scale(1.03);
+    }
+
+    /* Play Button Overlay for Video Thumbnail */
+    .video-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      color: white;
+      transition: background 0.3s ease;
+    }
+
+    .hero-media-container:hover .video-overlay {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .play-btn-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 30px var(--accent-glow);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .hero-media-container:hover .play-btn-circle {
+      transform: scale(1.1);
+    }
+
+    .play-icon {
+      width: 28px;
+      height: 28px;
+      fill: white;
+      transform: translateX(3px);
+      /* Center play arrow within circle */
+    }
+
+    .hero-info {
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    @media (max-width: 640px) {
+      .hero-info {
+        padding: 1.5rem;
+      }
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      line-height: 1.2;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .hero-title {
+        font-size: 1.5rem;
+      }
+    }
+
+    .hero-description {
+      color: var(--text-secondary);
+      font-size: 0.975rem;
+      margin-bottom: 2rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 6;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hero-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 1.2rem;
+    }
+
+    .meta-badge {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.75rem;
+      background: var(--border-color);
+      border-radius: 9999px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    /* Heart Icon Button Styles */
+    .btn-fav {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    body[data-theme="light"] .btn-fav {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .btn-fav:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: var(--heart-color);
+      transform: scale(1.1);
+    }
+
+    .btn-fav.active {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: var(--heart-color);
+      transform: scale(1.15);
+      animation: heartbeat 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes heartbeat {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.3);
+      }
+
+      100% {
+        transform: scale(1.15);
+      }
+    }
+
+    /* ==========================================
+         GALLERY GRID SECTION
+         ========================================== */
+    .gallery-section {
+      margin-bottom: 4rem;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    .apod-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--card-shadow);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .apod-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--accent-color);
+      box-shadow: 0 15px 35px var(--accent-glow);
+    }
+
+    .card-media-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 60%;
+      /* 5:3 Aspect Ratio */
+      overflow: hidden;
+      background: #000;
+      cursor: pointer;
+    }
+
+    .card-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .apod-card:hover .card-img {
+      transform: scale(1.05);
+    }
+
+    .card-overlay-actions {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 5;
+    }
+
+    .card-content {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      cursor: pointer;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      line-height: 1.3;
+      margin-top: 0.4rem;
+      margin-bottom: 0.8rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-footer {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* ==========================================
+         MY FAVOURITES SECTION
+         ========================================== */
+    .favourites-section {
+      background: rgba(18, 20, 29, 0.35);
+      border: 1px dashed var(--border-color);
+      border-radius: 24px;
+      padding: 2.5rem;
+      margin-top: 5rem;
+      transition: opacity var(--speed-normal) ease;
+    }
+
+    body[data-theme="light"] .favourites-section {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .favourites-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .empty-favourites {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-fav-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--border-color);
+      margin-bottom: 1rem;
+    }
+
+    /* ==========================================
+         MODAL / DETAILED OVERLAY COMPONENT
+         ========================================== */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(8, 9, 14, 0.95);
+      z-index: -100;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      overflow-y: auto;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.35s step-end;
+    }
+
+    body[data-theme="light"] .modal-backdrop {
+      background: rgba(241, 245, 249, 0.95);
+    }
+
+    .modal-backdrop.open {
+      z-index: 10000;
+      opacity: 1;
+      pointer-events: auto;
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), z-index 0s step-start;
+    }
+
+    .modal-container {
+      pointer-events: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 1000px;
+      max-height: 90vh;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8);
+      transform: scale(0.95) translateY(20px);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @media (max-width: 1024px) {
+      .modal-container {
+        grid-template-columns: 1fr;
+        max-height: 95vh;
+      }
+    }
+
+    .modal-backdrop.open .modal-container {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-media-pane {
+      position: relative;
+      background: #000;
+      min-height: 480px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: stretch;
+    }
+
+    @media (max-width: 1024px) {
+      .modal-media-pane {
+        min-height: 320px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .modal-media-pane {
+        min-height: 240px;
+      }
+    }
+
+    .modal-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .modal-iframe {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      border: 0;
+      background: #000;
+    }
+
+    @media (max-width: 1024px) {
+      .modal-iframe {
+        min-height: 320px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .modal-iframe {
+        min-height: 240px;
+      }
+    }
+
+    .modal-text-pane {
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 640px) {
+      .modal-text-pane {
+        padding: 1.5rem;
+      }
+    }
+
+    .modal-header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1.75rem;
+      line-height: 1.25;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .modal-title {
+        font-size: 1.35rem;
+      }
+    }
+
+    .modal-explanation {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-close-corner {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+    }
+
+    /* Custom scrollbar behaviors inside the panels */
+    .modal-container::-webkit-scrollbar,
+    .modal-text-pane::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .modal-container::-webkit-scrollbar-track,
+    .modal-text-pane::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .modal-container::-webkit-scrollbar-thumb,
+    .modal-text-pane::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    [data-theme="light"] .modal-container::-webkit-scrollbar-thumb,
+    [data-theme="light"] .modal-text-pane::-webkit-scrollbar-thumb {
+      background: rgba(15, 23, 42, 0.1);
+    }
+
+    /* ==========================================
+         LOADING / SHIMMER STATE
+         ========================================== */
+    .skeleton {
+      background: linear-gradient(90deg,
+          rgba(255, 255, 255, 0.03) 25%,
+          rgba(255, 255, 255, 0.08) 50%,
+          rgba(255, 255, 255, 0.03) 75%);
+      background-size: 200% 100%;
+      animation: loadingPulse 1.5s infinite;
+      border-radius: 12px;
+    }
+
+    body[data-theme="light"] .skeleton {
+      background: linear-gradient(90deg,
+          rgba(0, 0, 0, 0.04) 25%,
+          rgba(0, 0, 0, 0.09) 50%,
+          rgba(0, 0, 0, 0.04) 75%);
+      background-size: 200% 100%;
+    }
+
+    @keyframes loadingPulse {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .skeleton-image {
+      width: 100%;
+      height: 100%;
+    }
+
+    .skeleton-text {
+      height: 14px;
+      margin-bottom: 0.5rem;
+      width: 100%;
+    }
+
+    .skeleton-text.short {
+      width: 60%;
+    }
+
+    .skeleton-text.title {
+      height: 24px;
+      margin-bottom: 1rem;
+      width: 80%;
+    }
+
+    /* ==========================================
+         ERROR STATE COMPONENT
+         ========================================== */
+    .error-panel {
+      background: rgba(239, 68, 68, 0.05);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 24px;
+      padding: 3rem 1.5rem;
+      text-align: center;
+      max-width: 600px;
+      margin: 3rem auto;
+      display: none;
+      /* Controlled dynamically via JS */
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .error-panel.visible {
+      display: flex;
+    }
+
+    .error-icon {
+      width: 60px;
+      height: 60px;
+      color: #ef4444;
+    }
+
+    .error-title {
+      font-size: 1.5rem;
+      color: #ef4444;
+    }
+
+    .error-message {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* ==========================================
+         UTILITIES & TRANSITIONS
+         ========================================== */
+    /* ==========================================
+         UTILITIES & TRANSITIONS
+         ========================================== */
+    .fade-in {
+      animation: basicFadeIn 0.5s ease forwards;
+    }
+
+    @keyframes basicFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Custom gallery staggered cards anim */
+    .gallery-grid .apod-card {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes cardEntrance {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Hover states for surprise button */
+    #surpriseButton {
+      position: relative;
+      overflow: hidden;
+    }
+
+    #surpriseButton:hover .icon-svg {
+      transform: rotate(45deg) scale(1.1);
+    }
+
+    #surpriseButton .icon-svg {
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Pulse effect when randomized request is pending */
+    .loading-pulse {
+      animation: pulseIntensity 0.7s alternate infinite;
+    }
+
+    @keyframes pulseIntensity {
+      from {
+        opacity: 0.6;
+        box-shadow: 0 0 5px var(--accent-glow);
+      }
+
+      to {
+        opacity: 1;
+        box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+      }
+    }
+
+    /* Share menu layouts */
+    .share-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .share-dropdown {
+      position: absolute;
+      bottom: 115%;
+      right: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 0.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 180px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      opacity: 0;
+      transform: translateY(10px) scale(0.95);
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] .share-dropdown {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(15, 23, 42, 0.15);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+    }
+
+    .share-dropdown.open {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .share-item {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.825rem;
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      text-decoration: none;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .share-item:hover {
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--accent-color);
+    }
+
+    /* Copy confirmation bubble */
+    .copy-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #10b981;
+      color: white;
+      padding: 0.75rem 1.75rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+    }
+
+    .copy-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    html.modal-active {
+      overflow: hidden;
+    }
+
+    /* Footer block */
+    footer {
+      margin-top: 5rem;
+      text-align: center;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* ==========================================
+         SPOTLIGHT CURSOR & 3D TILT MICRO-INTERACTIONS
+         ========================================== */
+    .apod-card, .hero-card {
+      position: relative;
+      /* Smooth return transition */
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .apod-card::before, .hero-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(
+        300px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+        var(--spotlight-color, rgba(59, 130, 246, 0.12)),
+        transparent 80%
+      );
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .apod-card:hover::before, .hero-card:hover::before {
+      opacity: 1;
+    }
+
+    :root {
+      --spotlight-color: rgba(59, 130, 246, 0.12);
+    }
+
+    [data-theme="light"] {
+      --spotlight-color: rgba(29, 78, 216, 0.08);
+    }
+
+    /* Stardust Particle for Heart Bookmark Click */
+    .stardust-particle {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 99999;
+      box-shadow: 0 0 10px currentColor;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Starfield Animation Elements -->
+  <div class="starfield-container" aria-hidden="true">
+    <canvas id="celestialCanvas"></canvas>
+  </div>
+
+  <div class="app-container">
+    <!-- HEADER PANEL -->
+    <header>
+      <div class="logo-group">
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <h1 class="logo-title text-glow" style="margin: 0; line-height: 1.1;">NASA APOD Gallery</h1>
+          <div id="telemetryBadge" class="telemetry-badge sync">
+            <span class="pulse-dot"></span>
+            <span id="telemetryText" class="badge-text font-mono">Uplink Synced</span>
+          </div>
+        </div>
+        <span class="logo-subtitle">Stardance Space Explorer</span>
+      </div>
+      <div class="controls-group">
+        <!-- Dark / Light Theme toggle button. Touch target size exceeds 44px -->
+        <button id="themeToggle" class="btn btn-icon-only" title="Toggle Celestial Phase"
+          aria-label="Toggle dark and light mode">
+          <svg class="icon-svg" viewBox="0 0 24 24" id="themeIconSun">
+            <path
+              d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41zm-12.37 12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41z" />
+          </svg>
+          <svg class="icon-svg hidden" viewBox="0 0 24 24" id="themeIconMoon">
+            <path
+              d="M12.3 22h-.1c-5.5 0-10-4.5-10-10C2.2 6.8 6.5 2.5 11.7 2.2c.5 0 .9.3 1 .8.1.5-.2 1-.6 1.2-2.8 1.4-4.5 4.2-4.5 7.4 0 4.1 3.1 7.5 7.1 7.9.5.1.9.5.9 1s-.3.9-.8 1c-.2-.1-.4-.1-.5-.1zm-1.5-17.8C7.2 4.9 4.2 8.1 4.2 12c0 4.3 3.5 7.8 7.8 7.8.8 0 1.5-.1 2.2-.4-1.2-1.9-1.8-4.1-1.8-6.4 0-2.8 1-5.5 2.8-7.6-.8-.1-1.5-.2-2.2-.2z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- SPACE TOOLS / SEARCH PANEL -->
+    <section class="space-tools fade-in">
+      <div class="tool-item">
+        <label class="tool-label" for="datePicker">Look Up Cosmic Date</label>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="date" id="datePicker" min="1995-06-16" style="margin-bottom: 0;">
+          <button id="searchDateButton" class="btn" title="Look Up Specific Date" style="padding: 0.5rem 0.75rem;">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            Go
+          </button>
+        </div>
+      </div>
+
+      <div class="tool-item" style="margin-left: auto;">
+        <span class="tool-label">Random Discovery</span>
+        <button id="surpriseButton" class="btn" title="Discover a Random Astronomical Phenomenon"
+          style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(168, 85, 247, 0.15)); border-color: rgba(168, 85, 247, 0.4);">
+          <svg class="icon-svg" viewBox="0 0 24 24" style="color: #a855f7;">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z" />
+          </svg>
+          Surprise Me
+        </button>
+      </div>
+
+      <div class="tool-item">
+        <span class="tool-label">Celestial Link</span>
+        <button id="todayButton" class="btn" title="View Today's Astronomy Picture">
+          <svg class="icon-svg" viewBox="0 0 24 24">
+            <path
+              d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
+          </svg>
+          Latest APOD
+        </button>
+      </div>
+    </section>
+
+    <!-- DYNAMIC ERROR WINDOW -->
+    <section id="errorPanel" class="error-panel fade-in">
+      <svg class="error-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor"
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+      </svg>
+      <h3 class="error-title">Transmission Scrambled (Static Signal)</h3>
+      <p id="errorMessage" class="error-message">We encountered an issue linking to NASA's stellar servers. The deep
+        space network might be experiencing solar flares.</p>
+      <button id="retryButton" class="btn">
+        <svg class="icon-svg" viewBox="0 0 24 24">
+          <path
+            d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+        </svg>
+        Re-align Satellite Receiver
+      </button>
+    </section>
+
+    <!-- HERO SECTION (TODAY'S APOD) -->
+    <section id="heroSection" class="hero-section fade-in">
+      <span class="section-label" id="heroLabel">Featured Cosmic Discovery</span>
+
+      <!-- Hero Card (Skeleton Mode Loaded Initially) -->
+      <div id="heroCard" class="hero-card">
+        <div class="hero-media-container skeleton" id="heroMediaContainer">
+          <!-- Loader Placeholder -->
+          <div class="skeleton-image"></div>
+        </div>
+        <div class="hero-info">
+          <div class="skeleton skeleton-text short"></div>
+          <div class="skeleton skeleton-text title"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text short"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GALLERY SECTION (LAST 7 DAYS) -->
+    <section id="gallerySection" class="gallery-section fade-in">
+      <span class="section-label">Last 7 Days Orbit of Discoveries</span>
+      <div class="gallery-grid" id="galleryGrid">
+        <!-- 6 skeleton cards for loading state -->
+        <div class="apod-card">
+          <div class="card-media-wrapper skeleton" style="padding-top: 60%;"></div>
+          <div class="card-content">
+            <div class="skeleton skeleton-text short" style="margin-top: 0.5rem;"></div>
+            <div class="skeleton skeleton-text title"></div>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        </div>
+        <div class="apod-card">
+          <div class="card-media-wrapper skeleton" style="padding-top: 60%;"></div>
+          <div class="card-content">
+            <div class="skeleton skeleton-text short" style="margin-top: 0.5rem;"></div>
+            <div class="skeleton skeleton-text title"></div>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        </div>
+        <div class="apod-card">
+          <div class="card-media-wrapper skeleton" style="padding-top: 60%;"></div>
+          <div class="card-content">
+            <div class="skeleton skeleton-text short" style="margin-top: 0.5rem;"></div>
+            <div class="skeleton skeleton-text title"></div>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOCALSTORAGE SAVED BOOKMARKS -->
+    <section id="favouritesSection" class="favourites-section fade-in">
+      <div class="favourites-header">
+        <div>
+          <span class="section-label" style="margin-bottom: 0.25rem;">Stored Coordinates</span>
+          <h2 class="heading-display" style="font-size: 1.5rem;">My Celestial Favourites</h2>
+        </div>
+      </div>
+
+      <div class="gallery-grid" id="favouritesGrid">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div id="emptyFavourites" class="empty-favourites">
+        <svg class="empty-fav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+        </svg>
+        <p style="font-weight: 500; font-size: 1rem; margin-bottom: 0.25rem;">No constellations saved yet</p>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Click the heart icon on any card to store it in
+          your localized memory bank.</p>
+      </div>
+    </section>
+
+    <!-- SYSTEM FOOTER -->
+    <footer>
+      <p>NASA APOD Space Gallery &copy; 2026. Made with standard HTML, CSS, and Vanilla JavaScript.</p>
+      <p style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+        Built for the <a href="https://hackclub.com/stardance/" target="_blank" rel="noopener noreferrer">NASA &times;
+          Hack Club Stardance Challenge 2026</a>.
+        Atmospheric data supplied by the official NASA planetary endpoints.
+      </p>
+    </footer>
+  </div>
+
+  <!-- MAIN INTERACTIVE DISPLAY MODAL -->
+  <div id="apodModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-container">
+      <!-- Close button for easily exiting -->
+      <div class="modal-close-corner">
+        <button id="modalCloseButton" class="btn btn-icon-only" title="De-orbit modal View"
+          aria-label="Close modal panel">
+          <svg class="icon-svg" viewBox="0 0 24 24">
+            <path
+              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-media-pane" id="modalMediaPane">
+        <!-- Loaded dynamically -->
+      </div>
+
+      <div class="modal-text-pane">
+        <div class="modal-header-actions">
+          <span class="mono-date" id="modalDate">JUNE 15, 2026</span>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button id="modalFavButton" class="btn-fav" title="Save to Favourites" aria-label="Bookmark this discovery">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </button>
+
+            <!-- Share options button with absolute container -->
+            <div class="share-container">
+              <button id="modalShareButton" class="btn-fav" title="Share Space Discovery"
+                aria-label="Share space discovery" onclick="toggleShareDropdown('modal', null, event)">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+              </button>
+              <div id="modalShareDropdown" class="share-dropdown"></div>
+            </div>
+          </div>
+        </div>
+        <h2 class="modal-title" id="modalTitle">The Lagoon Nebula in Crimson Glass</h2>
+        <p class="modal-explanation" id="modalExplanation">Loading stellar documentation...</p>
+
+        <div
+          style="margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <span class="meta-badge" id="modalCopyright">Copyright &copy; NASA APOD</span>
+          <a id="modalHQLink" href="#" target="_blank" rel="noopener noreferrer" class="btn"
+            style="padding: 0.5rem 1rem; font-size: 0.8rem;">
+            View HD Original
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px;">
+              <path
+                d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+         JAVASCRIPT ENGINES (VANILLA ONLY)
+         ========================================== -->
+  <script>
+    /**
+     * NASA APOD Gallery App Script
+     * Structured with pure, friendly, clean logic to guide students in web development!
+     */
+
+    // ==========================================
+    // GLOBAL APP STATE & CONSTANTS
+    // ==========================================
+
+    // NASA API Endpoint key. Replace this with your key from api.nasa.gov to avoid demo-limit lockouts!
+    const NASA_API_KEY = "DEMO_KEY";
+    const BASE_URL = "https://api.nasa.gov/planetary/apod";
+
+    // 20 real NASA APOD archive images — all served from apod.nasa.gov (no hotlink restrictions in browsers)
+    // Shuffled randomly each session so the gallery feels fresh every visit
+    const FALLBACK_APOD_DATA_POOL = [
+      { date: "2017-08-05", title: "Gravity's Grin", explanation: "Albert Einstein's general theory of relativity, published over 100 years ago, predicted the phenomenon of gravitational lensing. And that's what gives these distant galaxies such a whimsical appearance, seen through the looking glass of X-ray and optical image data from the Chandra and Hubble space telescopes. Nicknamed the Cheshire Cat galaxy group, the group's two large elliptical galaxies are suggestively framed by arcs. The arcs are optical images of distant background galaxies lensed by the foreground group's total distribution of gravitational mass. Of course, that gravitational mass is dominated by dark matter. The two large elliptical \"eye\" galaxies represent the brightest members of their own galaxy groups which are merging. Their relative collisional speed of nearly 1,350 kilometers/second heats gas to millions of degrees producing the X-ray glow shown in purple hues. Curiouser about galaxy group mergers? The Cheshire Cat group grins in the constellation Ursa Major, some 4.6 billion light-years away.", url: "https://apod.nasa.gov/apod/image/1708/cheshirecat_chandra_comp1024c.jpg", hdurl: "https://apod.nasa.gov/apod/image/1708/cheshirecat_chandra_complg.jpg", media_type: "image", copyright: "" },
+      { date: "2007-04-29", title: "NGC 6302: Big, Bright, Bug Nebula", explanation: "The bright clusters and nebulae of planet Earth's night sky are often named for flowers or insects, and NGC 6302 is no exception. With an estimated surface temperature of about 250,000 degrees C, the central star of this particular planetary nebula is exceptionally hot though -- shining brightly in ultraviolet light but hidden from direct view by a dense torus of dust.  Above is a dramatically detailed close-up of the dying star's nebula recorded by the Hubble Space Telescope. Cutting across a bright cavity of ionized gas, the dust torus surrounding the central star is in the upper right corner of this view, nearly edge-on to the line-of-sight. Molecular hydrogen has recently been detected in this hot star's dusty cosmic shroud. NGC 6302 lies about 4,000 light-years away in the arachnologically correct constellation Scorpius.", url: "https://apod.nasa.gov/apod/image/0704/heic0407a_hst.jpg", hdurl: "https://apod.nasa.gov/apod/image/0704/heic0407a_hst_big.jpg", media_type: "image", copyright: "" },
+      { date: "2009-02-22", title: "Orion Nebula: The Hubble View", explanation: "Few cosmic vistas excite the imagination like the Orion Nebula. Also known as M42, the nebula's glowing gas surrounds hot young stars at the edge of an immense interstellar molecular cloud only 1,500 light-years away. The Orion Nebula offers one of the best opportunities to study how stars are born partly because it is the nearest large star-forming region, but also because the nebula's energetic stars have blown away obscuring gas and dust clouds that would otherwise block our view - providing an intimate look at a range of ongoing stages of starbirth and evolution.  This detailed image of the Orion Nebula is the sharpest ever, constructed using data from the Hubble Space Telescope's Advanced Camera for Surveys and the European Southern Observatory's La Silla 2.2 meter telescope. The mosaic contains a billion pixels at full resolution and reveals about 3,000 stars.", url: "https://apod.nasa.gov/apod/image/0902/m42_hst.jpg", hdurl: "https://apod.nasa.gov/apod/image/0902/m42_hst_big.jpg", media_type: "image", copyright: "" },
+      { date: "2018-03-10", title: "Phases of the Moon", explanation: "Look at the Moon every night and its visible sunlit portion gradually changes. In phases progressing from New Moon to Full Moon to New Moon again, a lunar cycle or lunation is completed in about 29.5 days. Top left to bottom right, these frames show the range of lunar phases for 25 consecutive nights beginning on January 18, following an almost complete lunation. They skip the 2 days just after and 2 days before New Moon, when the lunar phase is at best a narrow crescent, close to the Sun and really hard to see. Of course, mostly clear Arizona night skies and a little help from a friend were required to complete this lunar cycle project, imaging in early evening for the first half and late evening and early morning for the second half of the lunation. For extra credit, the cycle was centered on the Full Moon of January 31. That was the second Full Moon in January, when the Moon was near lunar orbit perigee and took on reddish hues during a total lunar eclipse.", url: "https://apod.nasa.gov/apod/image/1803/Cycle-Panel-1024px.jpg", hdurl: "https://apod.nasa.gov/apod/image/1803/Cycle-Panel-1200px.jpg", media_type: "image", copyright: "Jean-Francois Gout" },
+      { date: "2002-10-09", title: "Quaoar: Large Asteroid in the Outer Solar System", explanation: "Asteroids almost as large as planets are still being discovered in our own Solar System.  Recently an asteroid more than half the size of Pluto was found orbiting at a distance only a little further than the Solar System's most distant planet.   The large asteroid moves relative to background stars in the discovery images shown above taken by the Oschin Telescope at Palomar, California, USA.  Quaoar, the name suggested for the space rock by its discoverers, is one of several large asteroids discovered recently that roam in the distant Kuiper Belt.  Quaoar's size was resolved by images from the Hubble Space Telescope.  Quaoar is likely a  cold world covered in ice from which the Sun appears only as a particularly bright star.", url: "https://apod.nasa.gov/apod/image/0210/quaoar_gps.gif", hdurl: "https://apod.nasa.gov/apod/image/0210/quaoar_gps_big.gif", media_type: "image", copyright: "" },
+      { date: "2021-09-02", title: "M51: The Whirlpool Galaxy", explanation: "Find the Big Dipper and follow the handle away from the dipper's bowl until you get to the last bright star. Then, just slide your telescope a little south and west and you'll come upon this stunning pair of interacting galaxies, the 51st entry in Charles Messier's famous catalog. Perhaps the original spiral nebula, the large galaxy with well defined spiral structure is also cataloged as NGC 5194. Its spiral arms and dust lanes clearly sweep in front of its companion galaxy (top), NGC 5195. The pair are about 31 million light-years distant and officially lie within the angular boundaries of the small constellation Canes Venatici. Though M51 looks faint and fuzzy to the eye, deep images like this one reveal its striking colors and galactic tidal debris.", url: "https://apod.nasa.gov/apod/image/2109/M51-SL14-RGB-196-Final-cC_1024.png", hdurl: "https://apod.nasa.gov/apod/image/2109/M51-SL14-RGB-196-Final-cC.jpg", media_type: "image", copyright: "Josep Drudis" },
+      { date: "2007-12-13", title: "T Tauri and Hind's Variable Nebula", explanation: "The orange star centered in this remarkable telescopic skyview is T Tauri, prototype of the class of T Tauri variable stars. Nearby it is a dusty yellow cosmic cloud historically known as Hind's Variable Nebula (NGC 1555/1554). Over 400 light-years away, at the edge of a molecular cloud, both star and nebula are seen to vary significantly in brightness but not necessarily at the same time, adding to the mystery of the intriguing region. T Tauri stars are now generally recognized as young (less than a few million years old), sun-like stars still in the early stages of formation. To further complicate the picture, infrared observations indicate that T Tauri itself is part of a multiple system and suggest that the associated Hind's Nebula may also contain a very young stellar object. The dramatic color image spans about 4 light-years at the estimated distance of T Tauri.", url: "https://apod.nasa.gov/apod/image/0712/HindsVariable_goldman800.jpg", hdurl: "https://apod.nasa.gov/apod/image/0712/HindsVariable_goldman.jpg", media_type: "image", copyright: "Don Goldman" },
+      { date: "2025-07-27", title: "Lightning over the Volcano of Water", explanation: "Have you ever watched a lightning storm in awe?  You're not alone. Details of what causes lightning are still being researched, but it is known that inside some clouds, internal updrafts cause collisions between ice and snow that slowly separate charges between cloud tops and bottoms. The rapid electrical discharges that are lightning soon result.  Lightning usually takes a jagged course, rapidly heating a thin column of air to about three times the surface temperature of the Sun.  The resulting shock wave starts supersonically and decays into the loud sound known as thunder.  On average, around the world, about 6,000 lightning bolts occur between clouds and the Earth every minute. Pictured in July 2019 in a two-image composite, lightning stems from communication antennas near the top of Volcán de Agua (Volcano of Water) in Guatemala.  Sky Surprise: What picture did APOD feature on your birthday? (post 1995)", url: "https://apod.nasa.gov/apod/image/2507/LightningVolcano_Montufar_960.jpg", hdurl: "https://apod.nasa.gov/apod/image/2507/LightningVolcano_Montufar_3000.jpg", media_type: "image", copyright: "" },
+      { date: "2005-08-01", title: "2003 UB313: A Tenth Planet?", explanation: "Has a tenth planet been discovered?  A newly discovered object, designated 2003 UB313 and located more than twice the distance of Pluto, is expected to be at least as large as Pluto and probably larger, given current measurements. 2003 UB313's dimness and highly tilted orbit (44 degrees) prevented it from being discovered sooner.  Many astronomers speculate that numerous other icy objects larger than Pluto likely exist in the Kuiper Belt of the far distant Solar System.  If so, and if some are found closer in than 2003 UB313, it may be premature to call 2003 UB313 the tenth planet. Illustrated above is an artist's drawing showing how 2003 UB313 might look.  The unusually bright star on the right is the Sun.  Much of the world eagerly await the decision by the International Astronomical Union on whether 2003 UB313 will be designated a planet or given a name without subscripts.", url: "https://apod.nasa.gov/apod/image/0508/2003ub313drawing_palomar.jpg", hdurl: "https://apod.nasa.gov/apod/image/0508/2003ub313drawing_palomar_big.jpg", media_type: "image", copyright: "" },
+      { date: "2026-04-03", title: "Caught in the Web: Visualization of a Black Hole Merger in the Tarantula Nebula", explanation: "How can we see what is invisible? Black holes are not easy to see in the dark cosmic night, but astronomers can find them by analyzing their gravitational effects on matter, light and spacetime. The featured image shows an illustration that combines a simulation of a black hole binary system in its final \"death-dance\" with an astrophotography image of the Tarantula Nebula in the background. Even though black holes don't emit light, they distort the path of light rays, acting like a gravitational lens. As a result, the nebula appears extremely distorted, forming Einstein rings and multiple images.  Tarantula Nebula lies in the Large Magellanic Cloud, a dwarf galaxy that is one of the satellite galaxies of the Milky Way, 160,000 light-years away. That is more than 1,000 times closer than any of the binary black hole mergers detected so far. We'll probably never detect a merger so close to home!", url: "https://apod.nasa.gov/apod/image/2604/BH_Merger_Tarantula_1024.jpg", hdurl: "https://apod.nasa.gov/apod/image/2604/BH_Merger_Tarantula.jpg", media_type: "image", copyright: "Carl Knox" },
+      { date: "2003-07-17", title: "The Cat's Paw Nebula", explanation: "As soon as we find out whose cat did this . . .  Nebulae are as famous for being identified with familiar shapes as perhaps cats are for getting into trouble.  No cat, though, could have created the vast Cat's Paw Nebula visible in Scorpius.  At 5500 light years distant, Cat's Paw is an emission nebula with a red color that originates from an abundance of ionized hydrogen atoms.  Alternatively known as the Bear Claw Nebula or  NGC 6334, stars nearly ten times the mass of our Sun have been born there in only the past few million years. Pictured above, the Cat's Paw nebula was photographed during an astrophotography expedition to Namibia.", url: "https://apod.nasa.gov/apod/image/0307/catspaw_wendel.jpg", hdurl: "https://apod.nasa.gov/apod/image/0307/catspaw_wendel_big.jpg", media_type: "image", copyright: "Bernd Flach-Wilken & \nVolker Wendel\n(Spiegelteam), 2002 Namibia trip" },
+      { date: "2018-08-13", title: "The Pencil Nebula in Red and Blue", explanation: "This shock wave plows through interstellar space at over 500,000 kilometers per hour.  Near the top and moving up in this sharply detailed color composite, thin, bright, braided filaments are actually long ripples in a cosmic sheet of glowing gas seen almost edge-on. Cataloged as NGC 2736, its elongated appearance suggests its popular name, the Pencil Nebula. The Pencil Nebula is about 5 light-years long and 800 light-years away, but represents only a small part of the Vela supernova remnant. The Vela remnant itself is around 100 light-years in diameter, the expanding debris cloud of a star that was seen to explode about 11,000 years ago. Initially, the shock wave was moving at millions of kilometers per hour but has slowed considerably, sweeping up surrounding interstellar material. In the featured narrow-band, wide field image, red and blue colors track the characteristic glow of ionized hydrogen and oxygen atoms, respectively.   Growing Galleries: Launch of the Parker Solar Probe and Perseid Meteor Shower 2018", url: "https://apod.nasa.gov/apod/image/1808/PencilNebula_Perez_1080.jpg", hdurl: "https://apod.nasa.gov/apod/image/1808/PencilNebula_Perez_1553.jpg", media_type: "image", copyright: "Jos� Joaqu�n Perez" },
+      { date: "2010-06-12", title: "The Medusa Nebula", explanation: "Braided, serpentine filaments of glowing gas suggest this nebula's popular name, The Medusa Nebula. Also known as Abell 21, this Medusa is an old planetary nebula some 1,500 light-years away in the constellation Gemini. Like its mythological namesake, the nebula is associated with a dramatic transformation. The planetary nebula phase represents a final stage in the evolution of low mass stars like the sun, as they transform themselves from red giants to hot white dwarf stars and in the process shrug off their outer layers. Ultraviolet radiation from the hot star powers the nebular glow. The Medusa's transforming star is near the center of the overall bright crescent shape. In this deep, wide telescopic view, fainter filaments clearly extend below and to the left of the bright crescent region. The Medusa Nebula is estimated to be over 4 light-years across.", url: "https://apod.nasa.gov/apod/image/1006/medusa_franke900.jpg", hdurl: "https://apod.nasa.gov/apod/image/1006/medusa_franke.jpg", media_type: "image", copyright: "Bob Franke" },
+      { date: "2005-03-14", title: "The Fox Fur Nebula", explanation: "The nebula surrounding bright star S Mon is filled with dark dust and glowing gas.  The strange shapes originate from fine interstellar dust reacting in complex ways with the energetic light and hot gas being expelled by the young stars.  The region just below S Mon, the brightest star in the above picture, is nicknamed the Fox Fur Nebula for its color and texture.  The blue glow directly surrounding S Mon results from reflection, where neighboring dust reflects light from the bright star.  The more diffuse red glow results from emission, where starlight ionizes hydrogen gas.  Pink areas are lit by a combination of the two processes.  S Mon is part of a young open cluster of stars named NGC 2264, located about 2500 light years away toward the constellation of  Monoceros, just north of the Cone Nebula.", url: "https://apod.nasa.gov/apod/image/0503/foxfur_croman.jpg", hdurl: "https://apod.nasa.gov/apod/image/0503/foxfur_croman_big.jpg", media_type: "image", copyright: "Russell Croman" },
+      { date: "2016-03-27", title: "NGC 6357: Cathedral to Massive Stars", explanation: "How massive can a normal star be?  Estimates made from distance, brightness and standard solar models had given one star in the open cluster Pismis 24 over 200 times the mass of our Sun, making it one of the most massive stars known.  This star is the brightest object located just above the gas front in the featured image.  Close inspection of images taken with the Hubble Space Telescope, however, have shown that Pismis 24-1 derives its brilliant luminosity not from a single star but from three at least.  Component stars would still remain near 100 solar masses, making them among the more massive stars currently on record.  Toward the bottom of the image, stars are still forming in the associated emission nebula NGC 6357. Appearing perhaps like a Gothic cathedral, energetic stars near the center appear to be breaking out and illuminating a spectacular cocoon.", url: "https://apod.nasa.gov/apod/image/1603/NGC6357_hubble_960.jpg", hdurl: "https://apod.nasa.gov/apod/image/1603/NGC6357_hubble_3140.jpg", media_type: "image", copyright: "" },
+      { date: "2025-08-14", title: "M13: The Great Globular Cluster in Hercules", explanation: "In 1716, English astronomer Edmond Halley noted, \"This is but a little Patch, but it shews itself to the naked Eye, when the Sky is serene and the Moon absent.\" Of course, M13 is now less modestly recognized as the Great Globular Cluster in Hercules, one of the brightest globular star clusters in the northern sky. Sharp telescopic views like this one reveal the spectacular cluster's hundreds of thousands of stars. At a distance of 25,000 light-years, the cluster stars crowd into a region 150 light-years in diameter. Approaching the cluster core, upwards of 100 stars could be contained in a cube just 3 light-years on a side. For comparison with our neighborhood of the Milky Way, the closest star to the Sun is over 4 light-years away. Early telescopic observers of the great globular cluster also noted a curious convergence of three dark lanes with a spacing of about 120 degrees, seen here just below the cluster center.  Known as the propeller in M13, the shape is likely a chance optical effect of the distribution of stars viewed from our perspective against the dense cluster core.", url: "https://apod.nasa.gov/apod/image/2508/lrg_ngc6205_1024.jpg", hdurl: "https://apod.nasa.gov/apod/image/2508/lrg_ngc6205.jpg", media_type: "image", copyright: "R. Jay Gabany" },
+      { date: "1995-10-22", title: "A Quasar - Galaxy Collision?", explanation: "In 1963 astronomers were astounded to discover that certain faint, star-like objects have very large redshifts. The large redshifts imply that these objects, now known as quasars (QUASi-stellAR objects), lie near the edge of the observable Universe. To be visible at such extreme distances of billions of light years, they must emit tremendous amounts of energy.  Where does the energy come from? In the most widely accepted model, a quasar is the bright nucleus of an active galaxy powered by a central, supermassive black hole.", url: "https://apod.nasa.gov/apod/image/pks2349_hst.gif", hdurl: "https://apod.nasa.gov/apod/image/pks2349_hst.gif", media_type: "image", copyright: "" },
+      { date: "2009-10-22", title: "Moon and Planets in the Morning", explanation: "Last Friday, a gathering of three bright planets and the Moon graced the morning sky. With Mercury, Venus, Saturn, and a narrow lunar crescent close to the eastern horizon in the dawn twilight, this picture of the beautiful conjunction was recorded near Noerdlingen, Germany. These planets are wandering apart now and Mercury is sinking closer toward the rising Sun. But if you also scan the rest of the sky this week you should be able to add Jupiter and Mars to your planet spotting list, as Mars rises around midnight and Jupiter shines brightly after sunset. In fact, if you want a better view of Jupiter than Galileo had, you might check out the 2009 International Year of Astronomy activities and events during these next few Galilean Nights (October 22-24).", url: "https://apod.nasa.gov/apod/image/0910/3PlanetsMoonLabel_seip900.jpg", hdurl: "https://apod.nasa.gov/apod/image/0910/3PlanetsMoon_seip.jpg", media_type: "image", copyright: "Stefan Seip" },
+      { date: "2022-08-12", title: "Portrait of the Eagle Nebula", explanation: "A star cluster around 2 million years young surrounded by natal clouds of dust and glowing gas, Messier 16 (M16) is also known as The Eagle Nebula. This beautifully detailed image of the region adopts the colorful Hubble palette and includes cosmic sculptures made famous in Hubble Space Telescope close-ups of the starforming complex. Described as elephant trunks or Pillars of Creation, dense, dusty columns rising near the center are light-years in length but are gravitationally contracting to form stars. Energetic radiation from the cluster stars erodes material near the tips, eventually exposing the embedded new stars. Extending from the ridge of bright emission left of center is another dusty starforming column known as the Fairy of Eagle Nebula. M16 lies about 7,000 light-years away, an easy target for binoculars or small telescopes in a nebula rich part of the sky toward the split constellation Serpens Cauda (the tail of the snake). As framed, this telescopic portrait of the Eagle Nebula is about 70 light-years across.", url: "https://apod.nasa.gov/apod/image/2208/M16_final_1024.jpg", hdurl: "https://apod.nasa.gov/apod/image/2208/M16_final.jpg", media_type: "image", copyright: "Charles Bonafilia" },
+      { date: "2014-03-31", title: "2012 VP113: A New Furthest Known Orbit in the Solar System", explanation: "What object has the furthest known orbit in our Solar System? In terms of how close it will ever get to the Sun, the new answer is 2012 VP113, an object currently over twice the distance of Pluto from the Sun.  Pictured above is a series of discovery images taken with the Dark Energy Camera attached to the NOAO's Blanco 4-meter Telescope in Chile in 2012 and released last week. The distant object, seen moving on the lower right, is thought to be a dwarf planet like Pluto. Previously, the furthest known dwarf planet was Sedna, discovered in 2003. Given how little of the sky was searched, it is likely that as many as 1,000 more objects like 2012 VP113 exist in the outer Solar System. 2012 VP113 is currently near its closest approach to the Sun, in about 2,000 years it will be over five times further. Some scientists hypothesize that the reason why objects like Sedna and 2012 VP113 have their present orbits is because they were gravitationally scattered there by a much larger object -- possibly a very distant undiscovered planet.", url: "https://apod.nasa.gov/apod/image/1403/2012VP113_cis_960.gif", hdurl: "https://apod.nasa.gov/apod/image/1403/2012VP113_cis_494.gif", media_type: "image", copyright: "" }
+    ];
+
+    /** Shuffles an array in-place using Fisher-Yates algorithm and returns a new shuffled copy. */
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+
+    // Global dynamic lookup bank (Dates to APOD Objects mapping) to keep execution fast and prevent redunant network trips!
+    const apodCache = {};
+
+    // Local persistence storage array
+    let favouriteApods = [];
+
+    // Active APOD shown in the primary hero card right now
+    let activeHeroApod = null;
+
+    // ==========================================
+    // SYSTEM INITIALIZER
+    // ==========================================
+
+    /**
+     * Runs immediately when the index.html page is fully loaded in the browser.
+     * Boots our themes, configures events, and fetches deep-space assets.
+     */
+    function initializeApp() {
+      initTheme();
+      initDateConstraint();
+      loadFavouritesFromStorage();
+      triggerCoreDataFetchs();
+      setupGlobalEventListeners();
+      
+      // Boot Canvas Starfield & Micro-interactions
+      window.celestialStarfield = new CelestialStarfield('celestialCanvas');
+      initMicroInteractions();
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+      initializeApp();
+    }
+
+    // ==========================================
+    // INTEGRATED COMPONENT HANDLERS
+    // ==========================================
+
+    /**
+     * Preps light/dark mode systems based on user preferences or stored system parameters.
+     */
+    function initTheme() {
+      let savedTheme = 'dark'; try { savedTheme = localStorage.getItem('nasa_apod_theme') || 'dark'; } catch (e) { }
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeToggleUI(savedTheme);
+    }
+
+    /**
+     * Toggles the CSS theme between eclipse light mode and interstellar dark mode.
+     */
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      try { localStorage.setItem('nasa_apod_theme', nextTheme); } catch (e) { }
+      updateThemeToggleUI(nextTheme);
+    }
+
+    /**
+     * Adjusts the button checkmark visual display inside the client's navigation bar.
+     */
+    function updateThemeToggleUI(theme) {
+      const sunIcon = document.getElementById('themeIconSun');
+      const moonIcon = document.getElementById('themeIconMoon');
+      if (theme === 'light') {
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+      } else {
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+      }
+    }
+
+    /**
+     * Restricts the calendar lookup picker to ensure visitors cannot probe future dates or dates preceding NASA's APOD genesis (June 16, 1995).
+     */
+    function initDateConstraint() {
+      const picker = document.getElementById('datePicker');
+      const todayStr = getESTDateStringYMD(new Date());
+      picker.max = todayStr;
+    }
+
+    /**
+     * Gathers previously bookmarked objects from the browser's solid localStorage partition.
+     */
+    function loadFavouritesFromStorage() {
+      try {
+        const stored = localStorage.getItem('nasa_apod_favourites');
+        if (stored) {
+          try { favouriteApods = JSON.parse(stored); } catch (e) { favouriteApods = []; }
+        }
+      } catch (e) {
+        console.warn('localStorage unavailable:', e);
+        favouriteApods = [];
+      }
+      renderFavouritesSection();
+    }
+
+    /**
+     * Writes current favorites back onto localStorage to ensure sessions remain resilient.
+     */
+    function saveFavouritesToStorage() {
+      try { localStorage.setItem('nasa_apod_favourites', JSON.stringify(favouriteApods)); } catch (e) { console.warn('localStorage unavailable, favourites will not persist:', e); }
+      renderFavouritesSection();
+      // Update live nodes to make sure hearts reflect the states accurately
+      restoreHeartStatesAcrossPage();
+    }
+
+    /**
+     * Ensures that all heart icons on the page accurately reflect saved coordinates.
+     */
+    function restoreHeartStatesAcrossPage() {
+      const hearts = document.querySelectorAll('[data-id-heart]');
+      hearts.forEach(heart => {
+        const targetDate = heart.getAttribute('data-id-heart');
+        const isFav = favouriteApods.some(item => item.date === targetDate);
+        if (isFav) {
+          heart.classList.add('active');
+        } else {
+          heart.classList.remove('active');
+        }
+      });
+
+      // Sync modal favorite button if modal is active
+      const modalFav = document.getElementById('modalFavButton');
+      if (modalFav) {
+        const currentModalDate = modalFav.getAttribute('data-date');
+        const isFav = favouriteApods.some(item => item.date === currentModalDate);
+        if (isFav) {
+          modalFav.classList.add('active');
+        } else {
+          modalFav.classList.remove('active');
+        }
+      }
+    }
+
+    // ==========================================
+    // NETWORK TRANSCEIVERS (NASA API AGENT WITH TIMEOUT FALLBACKS to protect user screens)
+    // ==========================================
+
+    /**
+     * Dedicated fetch wrapper utilizing AbortController to cleanly abort long-running or stalled API queries.
+     */
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    }
+
+    /**
+     * Updates the connection UI status badge dynamically.
+     */
+    function showTelemetryStatus(isOnline, text) {
+      const badge = document.getElementById('telemetryBadge');
+      const badgeText = document.getElementById('telemetryText');
+      if (!badge || !badgeText) return;
+
+      badgeText.textContent = text;
+      if (isOnline) {
+        badge.className = 'telemetry-badge sync';
+      } else {
+        badge.className = 'telemetry-badge offline';
+      }
+    }
+
+    /**
+     * Gracefully activates local backup database seeder when API limits are exceeded or link stalls.
+     */
+    function activateLocalTelemetryFallback() {
+      showTelemetryStatus(false, "Offline Archive");
+
+      // Shuffle the full pool and pick 7 — fresh variety every session
+      const shuffled = shuffleArray(FALLBACK_APOD_DATA_POOL);
+      const galleryItems = shuffled.slice(0, 7);
+
+      // Seed full pool into cache for date-picker lookups
+      shuffled.forEach(item => cacheItem(item));
+
+      // Hero = first of the shuffled selection
+      activeHeroApod = galleryItems[0];
+      renderHeroCard(activeHeroApod);
+
+      const picker = document.getElementById('datePicker');
+      if (picker) {
+        picker.value = activeHeroApod.date;
+      }
+      document.getElementById('heroLabel').textContent = `Cosmic Archive - ${formatHumanReadableDate(activeHeroApod.date)}`;
+
+      // Populate gallery with next 6
+      renderGalleryGrid(galleryItems);
+    }
+
+    /**
+     * Initiates retrieval of both the primary Hero discovery and the 7-day responsive grid catalog on load.
+     */
+    async function triggerCoreDataFetchs() {
+      if (window.celestialStarfield) window.celestialStarfield.setWarp(true);
+      showGlobalSkeletons();
+      hideErrorPanel();
+      showTelemetryStatus(true, "Synchronizing...");
+
+      try {
+        // 1. Elect a random valid date first to always show a random APOD on initial page load!
+        const targetDate = getRandomAPODDate();
+
+        const randomItem = await fetchSpecificDateAPOD(targetDate);
+        activeHeroApod = randomItem;
+        cacheItem(randomItem);
+        renderHeroCard(randomItem);
+
+        // Set the date picker so it aligns with this initial surprise selection
+        const picker = document.getElementById('datePicker');
+        if (picker) {
+          picker.value = targetDate;
+        }
+        document.getElementById('heroLabel').textContent = `Cosmic Surprise - ${formatHumanReadableDate(targetDate)}`;
+
+        // 2. Map out the standard past week's discoveries (up to today) to populate the gallery grid
+        const todayStr = getESTDateStringYMD(new Date());
+        await fetchAndRenderLast7Days(todayStr);
+
+        showTelemetryStatus(true, "Uplink Synced");
+      } catch (error) {
+        console.warn("NASA live query failed or stalled. Engaging backup stellar databases: ", error);
+        activateLocalTelemetryFallback();
+      } finally {
+        if (window.celestialStarfield) {
+          setTimeout(() => window.celestialStarfield.setWarp(false), 800);
+        }
+      }
+    }
+
+    /**
+     * Fetches today's dynamic live APOD and loads it cleanly as the hero showcase.
+     */
+    async function triggerTodayAPODFetch() {
+      if (window.celestialStarfield) window.celestialStarfield.setWarp(true);
+      showHeroSkeletonsOnly();
+      hideErrorPanel();
+      showTelemetryStatus(true, "Retrieving Latest...");
+
+      try {
+        const item = await fetchLatestAPOD();
+        activeHeroApod = item;
+        cacheItem(item);
+        renderHeroCard(item);
+
+        const picker = document.getElementById('datePicker');
+        if (picker) {
+          picker.value = item.date;
+        }
+        document.getElementById('heroLabel').textContent = "Featured Cosmic Discovery";
+        showTelemetryStatus(true, "Uplink Synced");
+      } catch (error) {
+        console.warn("Failed fetching today APOD, falling back to newest local fallback: ", error);
+
+        // Select the first local fallback item (newest)
+        const fallbackItem = shuffleArray(FALLBACK_APOD_DATA_POOL)[0];
+        activeHeroApod = fallbackItem;
+        cacheItem(fallbackItem);
+        renderHeroCard(fallbackItem);
+
+        const picker = document.getElementById('datePicker');
+        if (picker) {
+          picker.value = fallbackItem.date;
+        }
+        document.getElementById('heroLabel').textContent = `Cosmic Archive - ${formatHumanReadableDate(fallbackItem.date)}`;
+        showTelemetryStatus(false, "Offline Archive");
+      } finally {
+        if (window.celestialStarfield) {
+          setTimeout(() => window.celestialStarfield.setWarp(false), 800);
+        }
+      }
+    }
+
+    /**
+     * Resolves a video-type APOD item to a real cosmic image using NASA's Images API, avoiding YouTube dependencies!
+     */
+    async function resolveVideoToNasaImage(item) {
+      if (!item || item.media_type !== "video") return item;
+
+      try {
+        // Sub-clean the title to get a pure NASA descriptive search string
+        const query = item.title
+          .replace(/\([^)]*\)/g, '') // remove parentheses text
+          .replace(/video/gi, '')    // remove video references
+          .replace(/lapse/gi, '')    // remove lapse references
+          .trim();
+
+        const url = `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image`;
+        const response = await fetchWithTimeout(url, {}, 8000);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.collection && data.collection.items && data.collection.items.length > 0) {
+            const firstMatch = data.collection.items[0];
+            const nasaId = firstMatch.data[0].nasa_id;
+
+            // Use NASA APOD archive URLs which have no hotlink restrictions in browsers
+            item.url = `https://apod.nasa.gov/apod/image/${nasaId}.jpg`;
+            item.hdurl = `https://apod.nasa.gov/apod/image/${nasaId}.jpg`;
+            item.media_type = "image";
+            return item;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not retrieve imagery match from NASA Images Library for: ", item.title, err);
+      }
+
+      // Reliable NASA APOD archive fallback image
+      item.url = "https://apod.nasa.gov/apod/image/2207/STScI-SMACS0723_webb.png";
+      item.hdurl = "https://apod.nasa.gov/apod/image/2207/STScI-SMACS0723_webb.png";
+      item.media_type = "image";
+      return item;
+    }
+
+    /**
+     * Contacts NASA servers to lock down the latest available APOD.
+     * Handled without absolute date ranges at first with safe abort conditions.
+     */
+    async function fetchLatestAPOD() {
+      const response = await fetchWithTimeout(`${BASE_URL}?api_key=${NASA_API_KEY}`, {}, 15000);
+      if (!response.ok) {
+        throw new Error(`NASA Server responded with code ${response.status}`);
+      }
+      let item = await response.json();
+      if (item.media_type === "video") {
+        item = await resolveVideoToNasaImage(item);
+      }
+      return item;
+    }
+
+    /**
+     * Fetches the specific range of 7 items.
+     * Calculates start and end parameters starting from the latest targetDate to prevent 404 date slips.
+     */
+    async function fetchAndRenderLast7Days(latestDateStr) {
+      const endDate = new Date(latestDateStr);
+      const startDate = new Date(endDate);
+      startDate.setDate(endDate.getDate() - 6); // Grab total of 7 items (index 0 to 6)
+
+      const startStr = getESTDateStringYMD(startDate);
+      const endStr = getESTDateStringYMD(endDate);
+
+      try {
+        const response = await fetchWithTimeout(`${BASE_URL}?api_key=${NASA_API_KEY}&start_date=${startStr}&end_date=${endStr}`, {}, 15000);
+
+        if (!response.ok) {
+          throw new Error(`Server returned status ${response.status} during gallery search.`);
+        }
+
+        let items = await response.json();
+
+        // Resolve any video items in parallel using our official NASA Images & Videos API resolver
+        items = await Promise.all(items.map(async (item) => {
+          if (item.media_type === "video") {
+            return await resolveVideoToNasaImage(item);
+          }
+          return item;
+        }));
+
+        // Re-sort to display chronological descending (newest first)
+        items.sort((a, b) => b.date.localeCompare(a.date));
+
+        // Save to local cache
+        items.forEach(item => cacheItem(item));
+
+        renderGalleryGrid(items);
+      } catch (err) {
+        console.warn("Primary grid range request failed. Running emergency backup arrays...", err);
+
+        // Fall back gracefully to the embedded archive
+        activateLocalTelemetryFallback();
+      }
+    }
+
+    /**
+     * Searches for a single specific discovery date.
+     */
+    async function fetchSpecificDateAPOD(dateString) {
+      if (apodCache[dateString]) {
+        return apodCache[dateString];
+      }
+
+      showHeroSkeletonsOnly();
+
+      try {
+        const response = await fetchWithTimeout(`${BASE_URL}?api_key=${NASA_API_KEY}&date=${dateString}`, {}, 15000);
+        if (!response.ok) {
+          if (response.status === 400) {
+            throw new Error("Date must be between Jun 16, 1995 and today.");
+          }
+          throw new Error(`Satellite signal returned status code ${response.status}`);
+        }
+        let item = await response.json();
+        if (item.media_type === "video") {
+          item = await resolveVideoToNasaImage(item);
+        }
+        cacheItem(item);
+        return item;
+      } catch (e) {
+        console.info("Info: fetching for specific target query fallback active: ", e.message || e);
+
+        // Double-check if the chosen date matches one of our rich pre-loaded fallbacks
+        const localMatch = FALLBACK_APOD_DATA_POOL.find(item => item.date === dateString);
+        if (localMatch) {
+          console.log("Found local offline archive match for selected date: ", dateString);
+          cacheItem(localMatch);
+          return localMatch;
+        }
+
+        // If it is a genuine validation error (e.g. date out of range), show the validation error panel
+        if (e.message && e.message.includes("between Jun 16, 1995 and today")) {
+          showErrorPanel(`Could not look up the cosmic entity for date: ${dateString}. ${e.message}`);
+          throw e;
+        }
+
+        // For service/network issues like 503, 429, or general offline state, gracefully synthesize a local mock/archived fallback
+        const dateSum = dateString.split('-').reduce((acc, part) => acc + (parseInt(part, 10) || 0), 0);
+        const fallbackIndex = Math.abs(dateSum) % FALLBACK_APOD_DATA_POOL.length;
+        const originalFallback = FALLBACK_APOD_DATA_POOL[isNaN(fallbackIndex) ? 0 : fallbackIndex];
+        const dynamicFallback = {
+          ...originalFallback,
+          date: dateString,
+          title: `${originalFallback.title} (Archive)`,
+          explanation: `[Uplink Network Active in Failover Mode] Showing archived capture from our offline cosmic database (NASA Service unavailable: ${e.message || 'Offline'}). ${originalFallback.explanation}`
+        };
+        console.warn(`NASA Service limited. Supplying resilient dynamic fallback for date ${dateString}.`);
+        cacheItem(dynamicFallback);
+        showTelemetryStatus(false, "Offline Archive");
+        hideErrorPanel();
+        return dynamicFallback;
+      }
+    }
+
+    /**
+     * Stores items inside a rapid lookup associative object.
+     */
+    function cacheItem(item) {
+      if (item && item.date) {
+        apodCache[item.date] = item;
+      }
+    }
+
+    // ==========================================
+    // COMPONENT RENDERERS
+    // ==========================================
+
+    /**
+     * Populates the primary hero showcase on the front-face.
+     */
+    function renderHeroCard(item) {
+      if (!item) return;
+
+      // Ensure the item is cached so all buttons (like, share, randomize, etc.) function flawlessly!
+      cacheItem(item);
+
+      const heroCard = document.getElementById('heroCard');
+
+      // Remove skeleton classes
+      heroCard.classList.remove('skeleton');
+
+      // Formulate media thumbnail
+      let mediaHtml = '';
+      if (item.media_type === "video") {
+        const ytId = getYouTubeId(item.url);
+        const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '';
+
+        mediaHtml = `
+            <div class="video-overlay" onclick="openApodModal('${item.date}')">
+              <div class="play-btn-circle">
+                <svg class="play-icon" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+              <span class="mono-date" style="color: white; font-weight: bold;">Interactive Cosmic Video</span>
+            </div>
+            ${thumbUrl ? `<img src="${thumbUrl}" alt="${sanitize(item.title)}" class="hero-img" referrerpolicy="no-referrer">` : `
+              <div style="width: 100%; height: 100%; min-height: 320px; background: linear-gradient(135deg, #090d16, #161233, #220e2b); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; color: rgba(255,255,255,0.35);">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253" />
+                </svg>
+              </div>
+            `}
+          `;
+      } else {
+        mediaHtml = `
+            <img src="${item.url}" alt="${sanitize(item.title)}" class="hero-img" onclick="openApodModal('${item.date}')" referrerpolicy="no-referrer">
+          `;
+      }
+
+      const isFav = favouriteApods.some(f => f.date === item.date);
+
+      const cardContent = `
+          <div class="hero-media-container" id="heroMediaContainer">
+            ${mediaHtml}
+          </div>
+          <div class="hero-info">
+            <span class="mono-date">${formatHumanReadableDate(item.date)}</span>
+            <h2 class="hero-title">${sanitize(item.title)}</h2>
+            <p class="hero-description">${sanitize(item.explanation)}</p>
+            <div class="hero-footer">
+              <span class="meta-badge">${item.copyright ? `&copy; ${sanitize(item.copyright)}` : 'Public Intellectual Domain'}</span>
+              
+              <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <!-- Save Favourite -->
+                <button class="btn-fav ${isFav ? 'active' : ''}" data-id-heart="${item.date}" onclick="handleFavouriteToggle('${item.date}', event)" title="Save Constellation" aria-label="Add to favourites">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </button>
+                
+                <!-- Share Button Container -->
+                <div class="share-container">
+                  <button class="btn" onclick="toggleShareDropdown('hero', '${item.date}', event)" title="Share Space Discovery" aria-label="Share space discovery" style="padding: 0.6rem 0.9rem;">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                      <circle cx="18" cy="5" r="3"></circle>
+                      <circle cx="6" cy="12" r="3"></circle>
+                      <circle cx="18" cy="19" r="3"></circle>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    Share
+                  </button>
+                  <div id="heroShareDropdown" class="share-dropdown"></div>
+                </div>
+
+                <!-- Cosmic Randomizer / Surprise Me inline within the hero card -->
+                <button class="btn" id="heroSurpriseButton" onclick="triggerHeroCardRandomize(event)" title="Discover Another Astronomical Phenomenon" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(168, 85, 247, 0.15)); border-color: rgba(168, 85, 247, 0.4);">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #a855f7; width: 16px; height: 16px;">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                  </svg>
+                  Roll Surprise
+                </button>
+
+                <button class="btn" onclick="openApodModal('${item.date}')">
+                  Expand Discovery
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+      heroCard.innerHTML = cardContent;
+      document.getElementById('heroLabel').textContent = "Featured Cosmic Discovery";
+    }
+
+    /**
+     * Populates the 7-day grid system.
+     */
+    function renderGalleryGrid(items) {
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        grid.innerHTML = '<p class="error-message">No discoveries logged for this orbital quadrant.</p>';
+        return;
+      }
+
+      items.forEach((item, index) => {
+        // Pre-cache so that all dynamic interactions are instantaneous!
+        cacheItem(item);
+
+        const card = document.createElement('div');
+        card.className = 'apod-card';
+        card.style.animationDelay = `${index * 75}ms`;
+
+        let mediaHtml = '';
+        if (item.media_type === "video") {
+          const ytId = getYouTubeId(item.url);
+          const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '';
+          mediaHtml = `
+              <div class="video-overlay">
+                <div class="play-btn-circle" style="width: 44px; height: 44px;">
+                  <svg class="play-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
+              </div>
+              ${thumbUrl ? `<img src="${thumbUrl}" alt="${sanitize(item.title)}" class="card-img" loading="lazy" referrerpolicy="no-referrer">` : `
+                <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #090d16, #161233); display: flex; align-items: center; justify-content: center;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 32px; height: 32px; color: rgba(255,255,255,0.25);">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747" />
+                  </svg>
+                </div>
+              `}
+            `;
+        } else {
+          mediaHtml = `<img src="${item.url}" alt="${sanitize(item.title)}" class="card-img" loading="lazy" referrerpolicy="no-referrer">`;
+        }
+
+        const isFav = favouriteApods.some(f => f.date === item.date);
+
+        card.innerHTML = `
+            <div class="card-media-wrapper" onclick="openApodModal('${item.date}')">
+              ${mediaHtml}
+            </div>
+            <div class="card-content" onclick="openApodModal('${item.date}')">
+              <span class="mono-date">${formatHumanReadableDate(item.date)}</span>
+              <h3 class="card-title">${sanitize(item.title)}</h3>
+              <div class="card-footer" style="margin-bottom: 0px;">
+                <span class="meta-badge" style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${item.copyright ? `&copy; ${sanitize(item.copyright)}` : 'Public Domain'}
+                </span>
+              </div>
+              
+              <!-- Core Actions Row - always visible and fully interactive! -->
+              <div class="card-actions-row" onclick="event.stopPropagation();" style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                <!-- Like Button (Fav Toggle) -->
+                <button class="btn-fav ${isFav ? 'active' : ''}" data-id-heart="${item.date}" onclick="handleFavouriteToggle('${item.date}', event)" title="Add to Favourites" aria-label="Add to favourites" style="width: 32px; height: 32px; min-width: 32px;">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </button>
+                
+                <!-- Share Button Container -->
+                <div class="share-container">
+                  <button class="btn" onclick="toggleShareDropdown('grid-${index}', '${item.date}', event)" title="Share Space Discovery" aria-label="Share space discovery" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px;">
+                      <circle cx="18" cy="5" r="3"></circle>
+                      <circle cx="6" cy="12" r="3"></circle>
+                      <circle cx="18" cy="19" r="3"></circle>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    Share
+                  </button>
+                  <div id="grid-${index}ShareDropdown" class="share-dropdown" style="bottom: 110%; left: 0; right: auto;"></div>
+                </div>
+
+                <div style="flex-grow: 1;"></div>
+                
+                <span onclick="openApodModal('${item.date}'); event.stopPropagation();" style="color: var(--accent-color); font-size: 0.8rem; font-weight: 500; cursor: pointer;" title="Expand Discovery">
+                  Expand &rarr;
+                </span>
+              </div>
+            </div>
+          `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    /**
+     * Populates the Favourites grid section at the base.
+     */
+    function renderFavouritesSection() {
+      const grid = document.getElementById('favouritesGrid');
+      const emptyState = document.getElementById('emptyFavourites');
+
+      grid.innerHTML = '';
+
+      if (favouriteApods.length === 0) {
+        emptyState.classList.remove('hidden');
+        grid.classList.add('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      grid.classList.remove('hidden');
+
+      favouriteApods.forEach((item, index) => {
+        // Pre-cache favourites so opening modal directly coordinates fast
+        cacheItem(item);
+
+        const card = document.createElement('div');
+        card.className = 'apod-card';
+        card.style.animationDelay = `${index * 75}ms`;
+
+        let mediaHtml = '';
+        if (item.media_type === "video") {
+          const ytId = getYouTubeId(item.url);
+          const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '';
+          mediaHtml = `
+              <div class="video-overlay">
+                <div class="play-btn-circle" style="width: 44px; height: 44px;">
+                  <svg class="play-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
+              </div>
+              ${thumbUrl ? `<img src="${thumbUrl}" alt="${sanitize(item.title)}" class="card-img" loading="lazy" referrerpolicy="no-referrer">` : `
+                <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #090d16, #161233); display: flex; align-items: center; justify-content: center;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 32px; height: 32px; color: rgba(255,255,255,0.25);">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747" />
+                  </svg>
+                </div>
+              `}
+            `;
+        } else {
+          mediaHtml = `<img src="${item.url}" alt="${sanitize(item.title)}" class="card-img" loading="lazy" referrerpolicy="no-referrer">`;
+        }
+
+        card.innerHTML = `
+            <div class="card-media-wrapper" onclick="openApodModal('${item.date}')">
+              ${mediaHtml}
+            </div>
+            <div class="card-content" onclick="openApodModal('${item.date}')">
+              <span class="mono-date">${formatHumanReadableDate(item.date)}</span>
+              <h3 class="card-title">${sanitize(item.title)}</h3>
+              <div class="card-footer" style="margin-bottom: 0px;">
+                <span class="meta-badge" style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${item.copyright ? `&copy; ${sanitize(item.copyright)}` : 'Public Domain'}
+                </span>
+              </div>
+              
+              <!-- Core Actions Row - always visible and fully interactive! -->
+              <div class="card-actions-row" onclick="event.stopPropagation();" style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                <!-- Like Button (Remove from Favorites) -->
+                <button class="btn-fav active" data-id-heart="${item.date}" onclick="handleFavouriteToggle('${item.date}', event)" title="Remove Constellation" aria-label="Remove from favourites" style="width: 32px; height: 32px; min-width: 32px;">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </button>
+                
+                <!-- Share Button Container -->
+                <div class="share-container">
+                  <button class="btn" onclick="toggleShareDropdown('fav-${index}', '${item.date}', event)" title="Share Space Discovery" aria-label="Share space discovery" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px;">
+                      <circle cx="18" cy="5" r="3"></circle>
+                      <circle cx="6" cy="12" r="3"></circle>
+                      <circle cx="18" cy="19" r="3"></circle>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    Share
+                  </button>
+                  <div id="fav-${index}ShareDropdown" class="share-dropdown" style="bottom: 110%; left: 0; right: auto;"></div>
+                </div>
+
+                <div style="flex-grow: 1;"></div>
+                
+                <span onclick="openApodModal('${item.date}'); event.stopPropagation();" style="color: var(--accent-color); font-size: 0.8rem; font-weight: 500; cursor: pointer;" title="Expand Discovery">
+                  Expand &rarr;
+                </span>
+              </div>
+            </div>
+          `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    // ==========================================
+    // CONTROLLER INTERPRETERS & ACTIONS
+    // ==========================================
+
+    /**
+     * Toggles bookmarks inside local state buffers, persisting changes to localStorage.
+     */
+    function handleFavouriteToggle(date, event) {
+      if (event) {
+        event.stopPropagation(); // Halt bubbling trigger to card expansion!
+      }
+
+      const item = apodCache[date];
+      if (!item) return;
+
+      const index = favouriteApods.findIndex(f => f.date === date);
+      if (index > -1) {
+        favouriteApods.splice(index, 1);
+      } else {
+        favouriteApods.unshift(item);
+      }
+
+      saveFavouritesToStorage();
+    }
+
+    /**
+     * Injects a quick randomizer trigger right from the primary hero showcase controls.
+     */
+    async function triggerHeroCardRandomize(event) {
+      if (event) event.stopPropagation();
+
+      const btn = document.getElementById('heroSurpriseButton');
+      if (btn) btn.classList.add('loading-pulse');
+      if (window.celestialStarfield) window.celestialStarfield.setWarp(true);
+      hideErrorPanel();
+
+      const targetDate = getRandomAPODDate();
+
+      try {
+        const picker = document.getElementById('datePicker');
+        if (picker) picker.value = targetDate;
+
+        const item = await fetchSpecificDateAPOD(targetDate);
+        renderHeroCard(item);
+
+        document.getElementById('heroLabel').textContent = `Cosmic Surprise - ${formatHumanReadableDate(targetDate)}`;
+        document.getElementById('heroSection').scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        console.warn("Hero card randomize live request failed, attempting fallback: ", err.message || err);
+        // Pick random fallback as immediate safe correction
+        const randomIndex = Math.floor(Math.random() * FALLBACK_APOD_DATA_POOL.length);
+        const item = FALLBACK_APOD_DATA_POOL[randomIndex];
+        renderHeroCard(item);
+
+        const picker = document.getElementById('datePicker');
+        if (picker) picker.value = item.date;
+
+        document.getElementById('heroLabel').textContent = `Cosmic Surprise Fallback - ${formatHumanReadableDate(item.date)}`;
+        document.getElementById('heroSection').scrollIntoView({ behavior: 'smooth' });
+      } finally {
+        if (btn) btn.classList.remove('loading-pulse');
+        if (window.celestialStarfield) {
+          setTimeout(() => window.celestialStarfield.setWarp(false), 800);
+        }
+      }
+    }
+
+    /**
+     * Launches detailed visual lightbox showing selected image details.
+     */
+    function openApodModal(date) {
+      const item = apodCache[date];
+      if (!item) return;
+
+      const modal = document.getElementById('apodModal');
+      const mediaPane = document.getElementById('modalMediaPane');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalDate = document.getElementById('modalDate');
+      const modalExp = document.getElementById('modalExplanation');
+      const modalCopy = document.getElementById('modalCopyright');
+      const modalHQ = document.getElementById('modalHQLink');
+      const modalFav = document.getElementById('modalFavButton');
+
+      // Formulate correct interactive media inside viewframes with robust frame bypasses and embed overrides
+      mediaPane.innerHTML = '';
+      if (item.media_type === "video") {
+        const embedUrl = getEmbedUrl(item.url);
+        mediaPane.innerHTML = `
+            <iframe class="modal-iframe" src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="${sanitize(item.title)}" referrerpolicy="no-referrer"></iframe>
+          `;
+      } else {
+        mediaPane.innerHTML = `
+            <img src="${item.url}" alt="${sanitize(item.title)}" class="modal-img" referrerpolicy="no-referrer">
+          `;
+      }
+
+      modalTitle.textContent = item.title;
+      modalDate.textContent = formatHumanReadableDate(item.date);
+      modalExp.textContent = item.explanation;
+      modalCopy.innerHTML = item.copyright ? `Copyright &copy; ${sanitize(item.copyright)}` : 'Public Domain Repository';
+
+      // Match original image reference
+      modalHQ.href = item.hdurl || item.url;
+
+      // Pair favourite context
+      modalFav.setAttribute('data-date', item.date);
+      const isFav = favouriteApods.some(f => f.date === item.date);
+      if (isFav) {
+        modalFav.classList.add('active');
+      } else {
+        modalFav.classList.remove('active');
+      }
+
+      // Engage animations
+      modal.classList.add('open');
+      document.documentElement.classList.add('modal-active');
+    }
+
+    /**
+     * Collapses detailed lightbox, wiping active memory runtimes.
+     */
+    function closeApodModal() {
+      const modal = document.getElementById('apodModal');
+      const mediaPane = document.getElementById('modalMediaPane');
+
+      modal.classList.remove('open');
+      document.documentElement.classList.remove('modal-active');
+
+      // Terminate running video sounds safely!
+      setTimeout(() => {
+        mediaPane.innerHTML = '';
+      }, 350);
+    }
+
+    /**
+     * Integrates standard listener bindings across interactive DOM nodes.
+     */
+    function setupGlobalEventListeners() {
+      // Theme switch
+      document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+      // Today reload button and latest APOD query
+      document.getElementById('todayButton').addEventListener('click', () => {
+        document.getElementById('datePicker').value = '';
+        triggerTodayAPODFetch();
+      });
+
+      // Reusable date-specific lookup module
+      const performDateSearch = async () => {
+        const picker = document.getElementById('datePicker');
+        if (!picker) return;
+        const selectedVal = picker.value;
+        if (!selectedVal) return;
+
+        if (window.celestialStarfield) window.celestialStarfield.setWarp(true);
+        hideErrorPanel();
+
+        try {
+          const specificItem = await fetchSpecificDateAPOD(selectedVal);
+          renderHeroCard(specificItem);
+
+          document.getElementById('heroLabel').textContent = `Cosmic Capture - ${formatHumanReadableDate(selectedVal)}`;
+          document.getElementById('heroSection').scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+          console.warn("Manual date query failed: ", err);
+        } finally {
+          if (window.celestialStarfield) {
+            setTimeout(() => window.celestialStarfield.setWarp(false), 800);
+          }
+        }
+      };
+
+      // Date picker calendar input trigger
+      document.getElementById('datePicker').addEventListener('change', performDateSearch);
+
+      // Click handler for our newly added Look Up Go Button
+      const btnSearch = document.getElementById('searchDateButton');
+      if (btnSearch) {
+        btnSearch.addEventListener('click', performDateSearch);
+      }
+
+      // Error retry satellite receiver button
+      document.getElementById('retryButton').addEventListener('click', triggerCoreDataFetchs);
+
+      // Modal close button
+      document.getElementById('modalCloseButton').addEventListener('click', closeApodModal);
+
+      // Click outside modal container closes it
+      document.getElementById('apodModal').addEventListener('click', (e) => {
+        if (e.target.id === 'apodModal') {
+          closeApodModal();
+        }
+      });
+
+      // Modal Fav trigger click
+      document.getElementById('modalFavButton').addEventListener('click', (e) => {
+        const currentModalDate = e.currentTarget.getAttribute('data-date');
+        if (currentModalDate) {
+          handleFavouriteToggle(currentModalDate);
+        }
+      });
+
+      // Keydown handlers (Escape safely closes active modal overlay)
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeApodModal();
+        }
+      });
+
+      // Surprise Me randomize initiator
+      const btnSurprise = document.getElementById('surpriseButton');
+      if (btnSurprise) {
+        btnSurprise.addEventListener('click', async () => {
+          if (window.celestialStarfield) window.celestialStarfield.setWarp(true);
+          btnSurprise.classList.add('loading-pulse');
+          hideErrorPanel();
+
+          const targetDate = getRandomAPODDate();
+
+          try {
+            document.getElementById('datePicker').value = targetDate;
+            const specificItem = await fetchSpecificDateAPOD(targetDate);
+            renderHeroCard(specificItem);
+
+            document.getElementById('heroLabel').textContent = `Cosmic Surprise - ${formatHumanReadableDate(targetDate)}`;
+            document.getElementById('heroSection').scrollIntoView({ behavior: 'smooth' });
+          } catch (err) {
+            console.warn("Surprise live request failed, failover archive active: ", err.message || err);
+            // Pick random from fallback offline data list as immediate recovery
+            const randomIndex = Math.floor(Math.random() * FALLBACK_APOD_DATA_POOL.length);
+            const item = FALLBACK_APOD_DATA_POOL[randomIndex];
+            renderHeroCard(item);
+            document.getElementById('datePicker').value = item.date;
+            document.getElementById('heroLabel').textContent = `Cosmic Surprise Fallback - ${formatHumanReadableDate(item.date)}`;
+            document.getElementById('heroSection').scrollIntoView({ behavior: 'smooth' });
+          } finally {
+            btnSurprise.classList.remove('loading-pulse');
+            if (window.celestialStarfield) {
+              setTimeout(() => window.celestialStarfield.setWarp(false), 800);
+            }
+          }
+        });
+      }
+
+      // Global dismiss for custom share dropdown menus
+      document.addEventListener('click', () => {
+        closeAllShareDropdowns();
+      });
+    }
+
+    // ==========================================
+    // STATE VISIBILITY AND FORMATTING UTILITIES
+    // ==========================================
+
+    /**
+     * Displays skeletons across entire dashboard containers.
+     */
+    function showGlobalSkeletons() {
+      // Hero skeleton
+      const heroCard = document.getElementById('heroCard');
+      heroCard.innerHTML = `
+          <div class="hero-media-container skeleton">
+            <div class="skeleton-image"></div>
+          </div>
+          <div class="hero-info">
+            <div class="skeleton skeleton-text short"></div>
+            <div class="skeleton skeleton-text title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text short"></div>
+          </div>
+        `;
+
+      // Gallery grid skeleton
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        const card = document.createElement('div');
+        card.className = 'apod-card';
+        card.innerHTML = `
+            <div class="card-media-wrapper skeleton" style="padding-top: 60%;"></div>
+            <div class="card-content">
+              <div class="skeleton skeleton-text short" style="margin-top: 0.5rem;"></div>
+              <div class="skeleton skeleton-text title"></div>
+              <div class="skeleton skeleton-text"></div>
+            </div>
+          `;
+        grid.appendChild(card);
+      }
+    }
+
+    /**
+     * Skeletons specific only to hero updates (to keep background grids steady during date pick transitions).
+     */
+    function showHeroSkeletonsOnly() {
+      const heroCard = document.getElementById('heroCard');
+      heroCard.innerHTML = `
+          <div class="hero-media-container skeleton">
+            <div class="skeleton-image"></div>
+          </div>
+          <div class="hero-info">
+            <div class="skeleton skeleton-text short"></div>
+            <div class="skeleton skeleton-text title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text short position-end"></div>
+          </div>
+        `;
+    }
+
+    /**
+     * Renders system error display layout.
+     */
+    function showErrorPanel(message) {
+      const errorEl = document.getElementById('errorMessage');
+      if (message.includes('429') || message.includes('403') || message.toLowerCase().includes('limit') || message.toLowerCase().includes('key')) {
+        errorEl.innerHTML = `${sanitize(message)}<br><br><div style="font-size: 0.9rem; background: rgba(59, 130, 246, 0.08); border: 1px dashed var(--accent-color); border-radius: 12px; padding: 1rem; line-height: 1.5; color: var(--text-primary); text-align: left; margin-top: 1rem;"><strong>📡 Orbit Control Notice:</strong> This usually happens when the shared NASA <strong>DEMO_KEY</strong> hits its hourly limits.<br><br>💡 To fix this instantly, get your own free permanent API key in 30 seconds from <a href="https://api.nasa.gov/" target="_blank" style="color: var(--accent-color); font-weight: 600; text-decoration: underline;">api.nasa.gov</a> and paste it into <code>index.html</code> at the top of the <code>&lt;script&gt;</code> element!</div>`;
+      } else {
+        errorEl.textContent = message;
+      }
+      document.getElementById('errorPanel').classList.add('visible');
+      document.getElementById('heroSection').classList.add('hidden');
+      document.getElementById('gallerySection').classList.add('hidden');
+    }
+
+    /**
+     * Clears error signals.
+     */
+    function hideErrorPanel() {
+      document.getElementById('errorPanel').classList.remove('visible');
+      document.getElementById('heroSection').classList.remove('hidden');
+      document.getElementById('gallerySection').classList.remove('hidden');
+    }
+
+    /**
+     * Formats standard YYYY-MM-DD input date arrays into stylish, readable English notation (e.g. "Jun 16, 1995").
+     */
+    function formatHumanReadableDate(dateString) {
+      if (!dateString) return '';
+      // Explicitly parse parts to avoid timezone shift inconsistencies
+      const parts = dateString.split('-');
+      if (parts.length !== 3) return dateString;
+
+      const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+      return dateObj.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    /**
+     * Calculates custom YYYY-MM-DD strings based on US Eastern times to matches Goddard Space Flight limits perfectly.
+     */
+    function getESTDateStringYMD(dateObj) {
+      // Format to exact locale timezone string for US Eastern (where NASA coordinates are registered)
+      return dateObj.toLocaleDateString("en-CA", {
+        timeZone: "America/New_York"
+      });
+    }
+
+    /**
+     * Extracts YouTube video ID from a URL, if present.
+     */
+    function getYouTubeId(url) {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    /**
+     * Dynamic utility converts general YouTube or Vimeo URLs to pristine iframe embed-ready URLs.
+     */
+    function getEmbedUrl(url) {
+      if (!url) return '';
+
+      // YouTube conversion
+      const ytId = getYouTubeId(url);
+      if (ytId) {
+        return `https://www.youtube.com/embed/${ytId}?rel=0&autoplay=1`;
+      }
+
+      // Vimeo conversion
+      const vimeoReg = /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/;
+      const vimeoMatch = url.match(vimeoReg);
+      if (vimeoMatch && vimeoMatch[3]) {
+        return `https://player.vimeo.com/video/${vimeoMatch[3]}?autoplay=1`;
+      }
+
+      return url;
+    }
+
+    /**
+     * Securely escapes strings from malicious HTML insertions to protect student code integrity.
+     */
+    function sanitize(str) {
+      if (!str) return '';
+      const temp = document.createElement('div');
+      temp.textContent = str;
+      return temp.innerHTML;
+    }
+
+    /**
+     * Dynamically constructs a random valid APOD date between June 16, 1995 and today's date in Eastern Time.
+     */
+    function getRandomAPODDate() {
+      const start = new Date(1995, 5, 16); // June 16, 1995 is the official APOD inception launch date
+      const end = new Date(); // Today
+
+      const randomTimestamp = start.getTime() + Math.random() * (end.getTime() - start.getTime());
+      const randomDate = new Date(randomTimestamp);
+
+      return getESTDateStringYMD(randomDate);
+    }
+
+    /**
+     * Toggles the interactive share dropdown panel.
+     */
+    function toggleShareDropdown(type, dateStr, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+
+      // Determine date
+      let targetDate = dateStr;
+      if (!targetDate) {
+        if (type === 'modal') {
+          const modalFav = document.getElementById('modalFavButton');
+          targetDate = modalFav ? modalFav.getAttribute('data-date') : '';
+        } else {
+          // default to activeHeroApod
+          targetDate = activeHeroApod ? activeHeroApod.date : '';
+        }
+      }
+
+      const item = apodCache[targetDate];
+      if (!item) return;
+
+      // Find or build the dropdown
+      let dropdown;
+      if (type === 'hero') {
+        dropdown = document.getElementById('heroShareDropdown');
+      } else if (type === 'modal') {
+        dropdown = document.getElementById('modalShareDropdown');
+      } else {
+        dropdown = document.getElementById(`${type}ShareDropdown`);
+      }
+
+      if (!dropdown) return;
+
+      // If it's already open, close it and exit
+      if (dropdown.classList.contains('open')) {
+        dropdown.classList.remove('open');
+        return;
+      }
+
+      // Close any other open dropdowns first
+      document.querySelectorAll('.share-dropdown').forEach(d => d.classList.remove('open'));
+
+      // Populate dropdown menu items dynamically
+      populateDropdown(dropdown, item);
+
+      // Open
+      dropdown.classList.add('open');
+    }
+
+    /**
+     * Populates share options inside a specific dropdown.
+     */
+    function populateDropdown(dropdown, item) {
+      const titleEscaped = encodeURIComponent(`"${item.title}" - Cosmic Discovery`);
+      const officialApodUrl = getOfficialApodUrl(item.date);
+      const urlEscaped = encodeURIComponent(officialApodUrl);
+
+      dropdown.innerHTML = `
+          <button class="share-item" onclick="triggerCopyShare('${item.date}', event)">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy Cosmic Link
+          </button>
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=${titleEscaped}&url=${urlEscaped}&hashtags=NASA,APOD,Stardance" target="_blank" rel="noopener noreferrer" onclick="closeAllShareDropdowns()">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            Share on X (Twitter)
+          </a>
+          <a class="share-item" href="https://www.facebook.com/sharer/sharer.php?u=${urlEscaped}" target="_blank" rel="noopener noreferrer" onclick="closeAllShareDropdowns()">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            Share on Facebook
+          </a>
+        `;
+
+      if (navigator.share) {
+        const btnNative = document.createElement('button');
+        btnNative.className = 'share-item';
+        btnNative.innerHTML = `
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+              <circle cx="12" cy="12" r="1"></circle>
+              <circle cx="12" cy="5" r="1"></circle>
+              <circle cx="12" cy="19" r="1"></circle>
+            </svg>
+            Native System Share
+          `;
+        btnNative.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          closeAllShareDropdowns();
+          try {
+            await navigator.share({
+              title: item.title,
+              text: `${item.title} - NASA Astronomy Picture of the Day (${item.date}):`,
+              url: officialApodUrl
+            });
+          } catch (shareErr) {
+            console.warn("Native share cancelled or failed: ", shareErr);
+          }
+        });
+        dropdown.appendChild(btnNative);
+      }
+    }
+
+    /**
+     * Toggles all dropdowns closed.
+     */
+    function closeAllShareDropdowns() {
+      document.querySelectorAll('.share-dropdown').forEach(d => d.classList.remove('open'));
+    }
+
+    /**
+     * Formulates the standard NASA APOD page URL from a YYYY-MM-DD format date.
+     */
+    function getOfficialApodUrl(dateStr) {
+      if (!dateStr) return 'https://apod.nasa.gov/apod/astropix.html';
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return 'https://apod.nasa.gov/apod/astropix.html';
+      const yy = parts[0].substring(2);
+      const mm = parts[1];
+      const dd = parts[2];
+      return `https://apod.nasa.gov/apod/ap${yy}${mm}${dd}.html`;
+    }
+
+    /**
+     * Copies description text to clipboard. Supporting fallback channels inside sandbox containers.
+     */
+    function triggerCopyShare(date, event) {
+      if (event) event.stopPropagation();
+      closeAllShareDropdowns();
+
+      const item = apodCache[date];
+      if (!item) return;
+
+      const officialUrl = getOfficialApodUrl(item.date);
+      const copyText = `"${item.title}" - NASA Astronomy Picture of the Day (${item.date})\nExplore discovery: ${officialUrl}`;
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(copyText).then(() => {
+          showCopyToast("Cosmic Coordinates Copied!");
+        }).catch(err => {
+          console.warn("Modern clipboard copy failed/blocked, initiating iframe fallback: ", err);
+          fallbackCopyText(copyText);
+        });
+      } else {
+        fallbackCopyText(copyText);
+      }
+    }
+
+    /**
+     * Elegant secondary copying using conventional document commands.
+     */
+    function fallbackCopyText(text) {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.width = "2em";
+        textArea.style.height = "2em";
+        textArea.style.padding = "0";
+        textArea.style.border = "none";
+        textArea.style.outline = "none";
+        textArea.style.boxShadow = "none";
+        textArea.style.background = "transparent";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (successful) {
+          showCopyToast("Cosmic Coordinates Copied!");
+        } else {
+          showCustomCopyDialog(text);
+        }
+      } catch (err) {
+        console.warn("Legacy copy failed, opening fallback prompt: ", err);
+        showCustomCopyDialog(text);
+      }
+    }
+
+    /**
+     * Visually stunning on-screen manual selector helper if programmatic copying is fully restricted by parent frame.
+     */
+    function showCustomCopyDialog(text) {
+      let dialog = document.getElementById('copyFallbackDialog');
+      if (!dialog) {
+        dialog = document.createElement('div');
+        dialog.id = 'copyFallbackDialog';
+        dialog.style.position = 'fixed';
+        dialog.style.inset = '0';
+        dialog.style.background = 'rgba(10, 12, 18, 0.9)';
+        dialog.style.display = 'flex';
+        dialog.style.alignItems = 'center';
+        dialog.style.justifyContent = 'center';
+        dialog.style.zIndex = '999999';
+        dialog.style.padding = '1.5rem';
+        dialog.innerHTML = `
+            <div style="background: #111625; border: 1px solid rgba(255, 255, 255, 0.1); padding: 1.5rem; border-radius: 12px; max-width: 480px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); font-family: inherit;">
+              <h3 style="margin-top: 0; color: #ffffff; font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; color: #3b82f6;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Copy Cosmic Coordinates
+              </h3>
+              <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem; line-height: 1.4;">Programmatic clipboard access is limited in this preview frame. Please copy the text manually (Ctrl+C / Cmd+C):</p>
+              <textarea id="copyFallbackTextArea" readonly style="width: 100%; height: 90px; padding: 0.75rem; border-radius: 6px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-family: inherit; font-size: 0.8rem; resize: none; outline: none; margin-bottom: 1rem;"></textarea>
+              <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button onclick="document.getElementById('copyFallbackDialog').style.display='none'" class="btn" style="padding: 0.5rem 1rem; font-size: 0.8rem; background: var(--border-color); border: none;">Dismiss</button>
+              </div>
+            </div>
+          `;
+        document.body.appendChild(dialog);
+      }
+      document.getElementById('copyFallbackTextArea').value = text;
+      dialog.style.display = 'flex';
+      // Auto select
+      setTimeout(() => {
+        const txt = document.getElementById('copyFallbackTextArea');
+        if (txt) {
+          txt.focus();
+          txt.select();
+        }
+      }, 120);
+    }
+
+    /**
+     * Displays a beautiful emerald green floating popup alert.
+     */
+    function showCopyToast(message) {
+      let toast = document.getElementById('copyToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'copyToast';
+        toast.className = 'copy-toast';
+        toast.innerHTML = `
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width:18px;height:18px;color:#ffffff;fill:none;stroke:currentColor;stroke-width:2.5;">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span id="copyToastText" style="color: #ffffff; font-family: inherit; font-size: 0.85rem; font-weight:600;">Coordinates Copied!</span>
+          `;
+        document.body.appendChild(toast);
+      }
+
+      document.getElementById('copyToastText').textContent = message;
+      toast.classList.add('show');
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // ==========================================
+    // CELESTIAL CANVAS MOTION BACKGROUND
+    // ==========================================
+    class CelestialStarfield {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.stars = [];
+        this.comets = [];
+        this.numStars = 180;
+        this.maxDepth = 1000;
+        
+        // Speed parameters
+        this.normalSpeed = 0.3;
+        this.warpSpeed = 28.0;
+        this.currentSpeed = this.normalSpeed;
+        this.warpActive = false;
+        
+        // Parallax variables
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.targetMouseX = 0;
+        this.targetMouseY = 0;
+        
+        this.init();
+      }
+
+      init() {
+        this.resize();
+        this.stars = [];
+        for (let i = 0; i < this.numStars; i++) {
+          this.stars.push({
+            x: (Math.random() - 0.5) * this.canvas.width * 2,
+            y: (Math.random() - 0.5) * this.canvas.height * 2,
+            z: Math.random() * this.maxDepth,
+            radius: Math.random() * 1.2 + 0.4,
+            baseOpacity: Math.random() * 0.7 + 0.3,
+            isYellow: Math.random() < 0.04 // 4% rare yellow stars
+          });
+        }
+
+        // Attach event listeners
+        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('mousemove', (e) => {
+          this.targetMouseX = (e.clientX - window.innerWidth / 2) * 0.08;
+          this.targetMouseY = (e.clientY - window.innerHeight / 2) * 0.08;
+        });
+
+        this.animate();
+      }
+
+      resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+
+      setWarp(active) {
+        this.warpActive = active;
+      }
+
+      spawnComet() {
+        if (this.comets.length > 0) return; // limit to 1 active comet
+        
+        const startFromLeft = Math.random() < 0.5;
+        const startX = startFromLeft ? -50 : this.canvas.width + 50;
+        const startY = Math.random() * (this.canvas.height * 0.5);
+        const speedX = startFromLeft ? Math.random() * 12 + 8 : -(Math.random() * 12 + 8);
+        const speedY = Math.random() * 4 + 1.5;
+        
+        this.comets.push({
+          x: startX,
+          y: startY,
+          vx: speedX,
+          vy: speedY,
+          length: Math.random() * 90 + 50,
+          opacity: 1.0,
+          width: Math.random() * 1.5 + 1.0
+        });
+      }
+
+      animate() {
+        const targetSpeed = this.warpActive ? this.warpSpeed : this.normalSpeed;
+        this.currentSpeed += (targetSpeed - this.currentSpeed) * 0.06;
+
+        this.mouseX += (this.targetMouseX - this.mouseX) * 0.08;
+        this.mouseY += (this.targetMouseY - this.mouseY) * 0.08;
+
+        const isDarkMode = document.documentElement.getAttribute('data-theme') !== 'light';
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        const halfWidth = this.canvas.width / 2;
+        const halfHeight = this.canvas.height / 2;
+
+        // Render stars
+        for (let i = 0; i < this.stars.length; i++) {
+          const star = this.stars[i];
+          const prevZ = star.z;
+          
+          star.z -= this.currentSpeed;
+          if (star.z <= 0) {
+            star.z = this.maxDepth;
+            star.x = (Math.random() - 0.5) * this.canvas.width * 2;
+            star.y = (Math.random() - 0.5) * this.canvas.height * 2;
+            continue;
+          }
+
+          const k = 128.0 / star.z;
+          const px = star.x * k + halfWidth - this.mouseX;
+          const py = star.y * k + halfHeight - this.mouseY;
+
+          if (px < 0 || px > this.canvas.width || py < 0 || py > this.canvas.height) {
+            continue;
+          }
+
+          const prevK = 128.0 / prevZ;
+          const ppx = star.x * prevK + halfWidth - this.mouseX;
+          const ppy = star.y * prevK + halfHeight - this.mouseY;
+
+          const size = star.radius * (1 - star.z / this.maxDepth) * 2;
+          const opacity = star.baseOpacity * (1 - star.z / this.maxDepth);
+
+          let color;
+          if (isDarkMode) {
+            color = star.isYellow ? `rgba(253, 224, 71, ${opacity})` : `rgba(255, 255, 255, ${opacity})`;
+          } else {
+            color = star.isYellow ? `rgba(202, 138, 4, ${opacity * 0.8})` : `rgba(99, 102, 241, ${opacity * 0.7})`;
+          }
+
+          this.ctx.beginPath();
+          if (this.currentSpeed > 5.0) {
+            this.ctx.strokeStyle = color;
+            this.ctx.lineWidth = size * 0.5;
+            this.ctx.moveTo(ppx, ppy);
+            this.ctx.lineTo(px, py);
+            this.ctx.stroke();
+          } else {
+            this.ctx.fillStyle = color;
+            this.ctx.arc(px, py, size, 0, Math.PI * 2);
+            this.ctx.fill();
+          }
+        }
+
+        // Spawn comets (0.15% chance per frame)
+        if (Math.random() < 0.0015) {
+          this.spawnComet();
+        }
+
+        // Render comets
+        for (let i = this.comets.length - 1; i >= 0; i--) {
+          const comet = this.comets[i];
+          comet.x += comet.vx;
+          comet.y += comet.vy;
+          comet.opacity -= 0.015;
+
+          if (comet.opacity <= 0 || comet.x < -100 || comet.x > this.canvas.width + 100 || comet.y > this.canvas.height + 100) {
+            this.comets.splice(i, 1);
+            continue;
+          }
+
+          this.ctx.beginPath();
+          const grad = this.ctx.createLinearGradient(comet.x, comet.y, comet.x - comet.vx * 1.8, comet.y - comet.vy * 1.8);
+          if (isDarkMode) {
+            grad.addColorStop(0, `rgba(186, 230, 253, ${comet.opacity})`); // Light blue comet
+            grad.addColorStop(1, 'rgba(186, 230, 253, 0)');
+          } else {
+            grad.addColorStop(0, `rgba(56, 189, 248, ${comet.opacity * 0.8})`);
+            grad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+          }
+
+          this.ctx.strokeStyle = grad;
+          this.ctx.lineWidth = comet.width;
+          this.ctx.moveTo(comet.x, comet.y);
+          this.ctx.lineTo(comet.x - comet.vx * 1.8, comet.y - comet.vy * 1.8);
+          this.ctx.stroke();
+        }
+
+        requestAnimationFrame(() => this.animate());
+      }
+    }
+
+    // ==========================================
+    // MICRO-INTERACTIONS
+    // ==========================================
+    function initMicroInteractions() {
+      // Spotlight & 3D Tilt Event Listeners
+      document.body.addEventListener('mousemove', (e) => {
+        const card = e.target.closest('.apod-card, .hero-card');
+        if (!card) return;
+        
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+        
+        const xc = rect.width / 2;
+        const yc = rect.height / 2;
+        const angleX = -(y - yc) / yc * 5;
+        const angleY = (x - xc) / xc * 5;
+        
+        card.style.transition = 'transform 0.1s ease-out';
+        card.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) translateY(-8px)`;
+      });
+
+      document.body.addEventListener('mouseout', (e) => {
+        const card = e.target.closest('.apod-card, .hero-card');
+        if (!card || card.contains(e.relatedTarget)) return;
+        
+        card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+        card.style.transform = '';
+      });
+
+      // Heart Stardust Particle Trigger
+      document.body.addEventListener('click', (e) => {
+        const favBtn = e.target.closest('.btn-fav');
+        if (!favBtn) return;
+        
+        const rect = favBtn.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        emitStardust(centerX, centerY);
+      });
+    }
+
+    // Spawn 12 particle dots that blast outwards and fall due to gravity
+    function emitStardust(x, y) {
+      const colors = ['#3b82f6', '#a855f7', '#ec4899', '#ffffff', '#eab308'];
+      for (let i = 0; i < 12; i++) {
+        const star = document.createElement('div');
+        star.className = 'stardust-particle';
+        
+        const size = Math.random() * 5 + 3;
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 100 + 50;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity - 25;
+        
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.backgroundColor = color;
+        star.style.color = color;
+        star.style.left = `${x}px`;
+        star.style.top = `${y}px`;
+        
+        document.body.appendChild(star);
+        
+        const startTime = performance.now();
+        const duration = Math.random() * 500 + 400;
+        
+        function updateParticle(time) {
+          const elapsed = time - startTime;
+          const progress = elapsed / duration;
+          
+          if (progress >= 1) {
+            star.remove();
+          } else {
+            const cx = x + (vx * progress);
+            const cy = y + (vy * progress) + (0.5 * 140 * progress * progress);
+            star.style.transform = `translate3d(${cx - x}px, ${cy - y}px, 0) scale(${1 - progress})`;
+            star.style.opacity = 1 - progress;
+            requestAnimationFrame(updateParticle);
+          }
+        }
+        requestAnimationFrame(updateParticle);
+      }
+    }
+  </script>
+</body>
+
+</html>
