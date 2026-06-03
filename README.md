@@ -8,9 +8,9 @@ Built for the **NASA × Hack Club Stardance Challenge 2026** — open source.
 
 ## 🚀 Live Demo
 
-**[👉 Click here to view the live site](https://YOUR-USERNAME.github.io/nasa-apod-gallery/)**
+**[👉 Click here to view the live site](https://iamabhinavpv.github.io/nasa-apod-gallery/)**
 
-> Replace the link above with your actual GitHub Pages URL after deploying.
+> Enable GitHub Pages: repo **Settings → Pages → Branch: `main` / folder: `/ (root)`**, then wait a minute for the site to build.
 
 ---
 
